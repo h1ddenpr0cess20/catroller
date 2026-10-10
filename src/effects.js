@@ -1,7 +1,7 @@
 /**
  * Bits that fly, as Dungeon Roller has them: a glitter for buttons and
- * skeins, a burst of buttons out of a tin, fluff off the ball when a cat
- * swats it, a splash when it goes in the water, dust when the vacuum has
+ * skeins, a burst of buttons out of a tin, wisps of wool off the ball when
+ * a cat swats it, drops of water when it goes in a spill, dust when the vacuum has
  * it. Each bit is ballistic, bounces off the floor or settles on it, and
  * shrinks away.
  */
@@ -30,6 +30,11 @@ export function createEffects(GFX, scene) {
     if (!buttonCache.has(colour)) buttonCache.set(colour, new GFX.MeshPhysicalMaterial({ name: 'button', color: new GFX.Color(colour), roughness: 0.3, clearcoat: 0.8 }));
     return buttonCache.get(colour);
   };
+  // Wisps of wool, and drops of water: lit like everything else, not glowing.
+  const fibre = new GFX.CylinderGeometry(0.008, 0.006, 0.12, 4);
+  const wool = new GFX.MeshStandardMaterial({ name: 'fluff', color: new GFX.Color('#c8281a'), roughness: 1 });
+  const drop = new GFX.SphereGeometry(0.03, 8, 6);
+  const water = new GFX.MeshPhysicalMaterial({ name: 'drop', color: new GFX.Color('#8ab8d0'), roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0.7 });
   const grit = new GFX.BoxGeometry(0.05, 0.05, 0.05);
   const dirt = new GFX.MeshStandardMaterial({ name: 'grit', color: new GFX.Color('#8a8276'), roughness: 1 });
 
@@ -117,19 +122,19 @@ export function createEffects(GFX, scene) {
 
     /** Fluff off the ball: a cat's swat. */
     tuft(x, y, z) {
-      for (let i = 0; i < 14; i++) {
-        const m = new GFX.Mesh(mote, glow(i % 3 ? '#ec3013' : '#ff8a6a'));
-        m.scale.setScalar(0.8 + Math.random() * 0.6);
-        const [ox, oy, oz] = outward(1.4, 2.5);
-        spawn(m, { x, y, z, vx: ox, vy: oy, vz: oz, life: 0.8 + Math.random() * 0.6, floaty: 0.15, drag: 2, spin: 4, bounce: 0 });
+      for (let i = 0; i < 8; i++) {
+        const m = new GFX.Mesh(fibre, wool);
+        m.scale.setScalar(0.7 + Math.random() * 0.6);
+        const [ox, oy, oz] = outward(1.2, 1.6);
+        spawn(m, { x, y, z, vx: ox, vy: oy, vz: oz, life: 0.6 + Math.random() * 0.5, floaty: 0.25, drag: 2.5, spin: 6, bounce: 0 });
       }
     },
 
     /** A splash of water. */
     splash(x, y, z) {
       for (let i = 0; i < 26; i++) {
-        const m = new GFX.Mesh(mote, glow(i % 2 ? '#9ad0f0' : '#e0f4ff'));
-        m.scale.setScalar(0.8 + Math.random());
+        const m = new GFX.Mesh(drop, water);
+        m.scale.setScalar(0.6 + Math.random() * 0.8);
         const [ox, oy, oz] = outward(2.4, 5);
         spawn(m, { x, y: y + 0.05, z, vx: ox, vy: oy, vz: oz, life: 0.6 + Math.random() * 0.4, bounce: 0 });
       }

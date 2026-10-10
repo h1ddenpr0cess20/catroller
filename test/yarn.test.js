@@ -90,6 +90,30 @@ describe('the loose end caught', () => {
     assert.ok(MAX_LAID >= 1.5);
   });
 
+  it('snaps where it lies when the ball goes over the edge, or is put down somewhere else, and draws nothing past it', () => {
+    for (const how of ['edge', 'moved']) {
+      let over = false;
+      const yarn = createBall(GFX, (x, z) => (over && z > 4 ? null : 0));
+      const b = { x: 2, y: yarn.radius, z: 2, r: yarn.radius, vx: 0, vy: 0, vz: 0 };
+      const q = [0, 0, 0, 1];
+      yarn.snag(b, q, { snap: 4 });
+      let out = null;
+      for (let i = 0; i < 60; i++) { b.z += 0.03; out = yarn.step(b, 1 / 60); yarn.pose(b, q); }
+      const laid = yarn.paid;
+      assert.ok(laid > 0.4 && !out.snapped, `${laid} m laid`);
+      if (how === 'edge') { over = true; b.z = 4.02; b.y -= 1; } else { b.x = 9; b.z = 9; }
+      out = yarn.step(b, 1 / 60);
+      assert.ok(out.snapped > 0.4, `${how}: it snapped`);
+      assert.equal(yarn.holder, null);
+      // What was left lies on the floor where the ball rolled, not down off the edge or across to where it went.
+      const p = out.piece.group.children[0].geometry.attributes.position.array;
+      for (let v = 0; v < p.length; v += 3) {
+        assert.ok(p[v + 1] > -0.01 && p[v + 1] < 0.02, `${how}: a bit of it at height ${p[v + 1]} m`);
+        assert.ok(Math.abs(p[v] - 2 * TILE_METRES) < 0.05 && p[v + 2] < 4.1 * TILE_METRES, `${how}: a bit of it at ${p[v]}, ${p[v + 2]} m`);
+      }
+    }
+  });
+
   it('won\'t be caught twice at once, and a skein winds on only up to a whole ball', () => {
     const { yarn, b, q } = rig();
     assert.equal(yarn.windOn(5), 0, 'already a whole ball');

@@ -6,8 +6,8 @@
  * (`view.js`).
  *
  * The lighting is a house at night: a warm wash from the rooms, a soft key
- * light from high up for the shadows, a little glow kept on the ball so it
- * reads against any floor, and real lights at the few lamps nearest it.
+ * light from high up for the shadows, and real lights at the few lamps
+ * nearest the ball.
  * Every other lamp is baked into the floors and walls (`house.js`). What the
  * glossy things reflect is a lamplit room painted at startup.
  */
@@ -138,9 +138,6 @@ export async function createStage(host) {
   shadowSpan(1);
   scene.add(key, key.target);
 
-  // A soft glow kept on the ball, so red yarn reads on any floor.
-  const glow = new GFX.PointLight(0xffe4c8, 3.2, 5, 1.8);
-  scene.add(glow);
   // The lamps nearest the ball.
   const lampLights = Array.from({ length: LAMP_LIGHTS }, () => {
     const light = new GFX.PointLight(0xffc27a, 0, 8, 1.6);
@@ -206,18 +203,20 @@ export async function createStage(host) {
     key.target.position.copy(stage.target);
     key.target.updateMatrixWorld();
 
-    glow.position.set(stage.ball.x, stage.ball.y + 1.6, stage.ball.z + 0.4);
-    // The nearest lamps get the real lights, each fading in as it comes into reach.
+    // The nearest lamps get the real lights. There are only so many, so the furthest of them dims to nothing as
+    // the next lamp out comes as near: when the two change places, the light goes over at no brightness at all,
+    // and nothing flickers.
     const near = lamps
       .map((t) => ({ t, d: Math.hypot(t.at[0] - stage.ball.x, t.at[2] - stage.ball.z) }))
-      .sort((a, b) => a.d - b.d)
-      .slice(0, LAMP_LIGHTS);
+      .sort((a, b) => a.d - b.d);
+    const next = near[LAMP_LIGHTS]?.d ?? Infinity;
     lampLights.forEach((light, i) => {
       const n = near[i];
       if (!n) { light.intensity = 0; return; }
       light.position.set(...n.t.at);
-      const fade = Math.max(0, Math.min(1, (18 - n.d) / 6));
-      light.intensity = 9 * fade;
+      const reach = Math.max(0, Math.min(1, (18 - n.d) / 6));
+      const handover = Math.max(0, Math.min(1, (next - n.d) / 3));
+      light.intensity = 9 * reach * handover;
     });
   };
 

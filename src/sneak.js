@@ -50,6 +50,8 @@ export function toGround({ x, y }, yaw) {
  * from level to level, and with it whatever yarn it has left.
  */
 export function createSneak(GFX, index, { yarn, q = [0, 0, 0, 1] }) {
+  // Whatever was still caught in the last room stays there.
+  if (yarn.holder) yarn.snap();
   const level = loadLevel(index).settle();
   const built = buildHouse(level);
   const nav = createNav(level);

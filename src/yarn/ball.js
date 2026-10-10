@@ -27,6 +27,9 @@ export const TILE_METRES = 0.3;
 /** The longest the strand pays out before it snaps, whatever holds it, in metres. */
 export const MAX_LAID = 4.5;
 
+/** Further than this in one step (metres) and the ball didn't roll there: it fell, or was put there. */
+const JUMP = 0.12;
+
 /** The floor path is sampled every 2 mm, as Carol's route is. */
 const RS = 0.002;
 const CAPR = 4;
@@ -314,6 +317,19 @@ export function createBall(GFX, floor) {
         const x = b.x * TILE_METRES, z = b.z * TILE_METRES;
         const f = floor(b.x, b.z);
         const y = (f ?? b.y - b.r) * TILE_METRES;
+        // Off the edge of the floor, or put down somewhere else all at once (back where it was safe, or in
+        // the next room): the strand can't follow it there, so it snaps where it lies.
+        const was = path[path.length - 1];
+        if (f === null || Math.hypot(x - was[0], z - was[2]) > JUMP) {
+          const s = paidOut();
+          out.piece = s > RS * 4 ? cut(s) : null;
+          out.snapped = s;
+          end -= s;
+          if (path.length > 1) strandPose(end, ...headingAt(s));
+          release();
+          out.radius = riding(end) / TILE_METRES;
+          return out;
+        }
         // Back over the strand: it winds back on. Anywhere else: it pays out.
         let best = path.length - 1, bestD = Infinity;
         for (let i = Math.max(0, path.length - 40); i < path.length; i++) {

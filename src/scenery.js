@@ -491,7 +491,7 @@ function furnitureMaterials(GFX) {
     leaf: P('leaf', { color: col('#3a6a32'), roughness: 0.55, sheen: 0.5, sheenColor: col('#9ad08a'), side: GFX.DoubleSide }),
     oven: P('oven', { color: col('#141416'), roughness: 0.08, clearcoat: 1 }),
     porthole: P('porthole', { color: col('#304048'), roughness: 0.05, clearcoat: 1, metalness: 0.3 }),
-    bathwater: P('bathwater', { color: col('#8ac0d8'), roughness: 0.05, clearcoat: 1, emissive: col('#20384a'), emissiveIntensity: 0.4 }),
+    bathwater: P('bathwater', { color: col('#7ab0c8'), roughness: 0.05, clearcoat: 1 }),
     wicker: P('wicker', { color: col('#ffffff'), map: wickerTexture(GFX).map, roughness: 0.85 }),
     needle: P('needle', { color: col('#d8b070'), roughness: 0.4, clearcoat: 0.6 }),
     string: P('string', { color: col('#e8e0d0'), roughness: 0.9 }),
@@ -719,6 +719,14 @@ export function createLamps(GFX, house) {
     ])),
     shade: geometry(GFX, moved(lathe([[0.32, 0], [0.31, 0.04], [0.26, 0.2], [0.22, 0.34], [0.22, 0.36]], 24), [0, -0.3, 0.22])),
   };
+  const flex = new GFX.MeshStandardMaterial({ name: 'flex', color: new GFX.Color('#2a2420'), roughness: 0.8 });
+  const pendant = {
+    cord: geometry(GFX, joined([
+      tube([[0, 0.2, 0], [0, 2.5, 0]], 0.02, { radial: 6 }),
+      moved(lathe([[0, 0], [0.09, 0], [0.09, 0.2], [0.05, 0.24], [0, 0.24]], 14), [0, 0.02, 0]),
+    ])),
+    shade: geometry(GFX, lathe([[0.42, -0.2], [0.4, -0.16], [0.26, 0.0], [0.1, 0.1], [0.09, 0.14]], 28)),
+  };
   for (const [x, y, z] of house.lamps) {
     const g = new GFX.Group();
     // On the face of the wall toward the room, turned to face into it.
@@ -729,13 +737,14 @@ export function createLamps(GFX, house) {
     }) ?? [0, 1];
     const onWall = house.cell(cx, cz)?.kind === 'wall';
     g.position.set(x + (onWall ? into[0] * 0.5 : 0), y, z + (onWall ? into[1] * 0.5 : 0));
-    g.rotation.y = Math.atan2(into[0], into[1]);
-    const arm = new GFX.Mesh(sconce.arm, brass);
-    const cup = new GFX.Mesh(sconce.shade, shade);
+    if (onWall) g.rotation.y = Math.atan2(into[0], into[1]);
+    // On a wall, a sconce; anywhere else, a lamp hanging on its flex from the ceiling, out of sight above.
+    const arm = new GFX.Mesh(onWall ? sconce.arm : pendant.cord, onWall ? brass : flex);
+    const cup = new GFX.Mesh(onWall ? sconce.shade : pendant.shade, shade);
     g.add(arm, cup);
     arm.castShadow = true;
     group.add(g);
-    bulbs.push([g.position.x + into[0] * 0.25, y - 0.15, g.position.z + into[1] * 0.25]);
+    bulbs.push(onWall ? [g.position.x + into[0] * 0.25, y - 0.15, g.position.z + into[1] * 0.25] : [x, y - 0.25, z]);
   }
   for (const f of house.furniture) if (f.lamp) bulbs.push(f.lamp);
   return { group, bulbs };

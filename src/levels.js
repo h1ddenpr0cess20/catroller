@@ -193,7 +193,7 @@ function landing() {
   c.cat('calico', ...run.tile(4, 0), { does: 'patrol', path: [run.tile(2, 0), run.tile(12, 0)], range: 9 });
   c.critter('fly', ...run.tile(8, 0));
   c.button(...run.tile(10, 1), 3);
-  c.lamp(...run.tile(6, -2), 2.4);
+  c.lamp(...run.tile(6, 2), 2.4);
   d.turn('-x', { width: 3 });
   // Down the stairs: a long flight, the loose end catching on the way.
   d.stairs(8, 5.6, { width: 3, floor: 'carpet', color: 0 });
@@ -369,7 +369,7 @@ function cellar() {
   c.cat('ginger', laundry.x + 6, laundry.z + 9, { does: 'sit', facing: 0.8 });
   c.skein(laundry.x + 10, laundry.z + 4, 8);
   c.button(laundry.x + 2, laundry.z + 6, 3).button(laundry.x + 9, laundry.z + 10, 3);
-  c.lamp(laundry.x + 6, laundry.z - 1, 2.4);
+  c.lamp(laundry.x + 4, laundry.z - 1, 2.4);
   d.turn('+x', { width: 3, floor: 'stone' });
   d.hall(4);
   d.exit(3);
