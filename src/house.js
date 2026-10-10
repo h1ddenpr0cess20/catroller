@@ -26,6 +26,9 @@ export const DEPTH = 6;
 /** Walls on the back sides of a room and on the front, above the floor. */
 export const WALL = Object.freeze({ back: 3.2, front: 0.6 });
 
+/** Low walls are drawn cut down to this above the floor, like a doll's house's front: still there for the ball to bump into, but never in the way of seeing it. */
+export const CUT = 0.18;
+
 /** What floors are made of: each drawn with its own texture (`scenery.js`). */
 export const FLOORS = ['wood', 'carpet', 'tile', 'boards', 'stone'];
 
@@ -478,7 +481,7 @@ export function buildHouse(house) {
    * the edge p0 → p1, facing `out`. `base` is the height its texture starts
    * from (the floor it stands on), `colour(y)` its colour by height.
    */
-  const upright = (into, p0, p1, poly, out, colour, base) => {
+  const upright = (into, p0, p1, poly, out, colour, base, solid = true) => {
     const at = (t, y) => [p0[0] + (p1[0] - p0[0]) * t, y, p0[1] + (p1[1] - p0[1]) * t];
     const pts = poly.map(([t, y]) => at(t, y));
     const along = (p) => (Math.abs(p1[0] - p0[0]) > 0 ? p[0] : p[2]);
@@ -486,16 +489,40 @@ export function buildHouse(house) {
       let a = pts[0], b = pts[k], c = pts[k + 1];
       let n = normalOf(a, b, c);
       if (n[0] * out[0] + n[2] * out[2] < 0) { [b, c] = [c, b]; n = normalOf(a, b, c); }
-      world.addTriangle(...a, ...b, ...c);
+      if (solid) world.addTriangle(...a, ...b, ...c);
       if (into) face(into, a, b, c, n, [a, b, c].map((p) => lit(colour(p[1]), p)), [a, b, c].map((p) => [along(p), p[1] - base]));
     }
+  };
+
+  /** The heights a tile is drawn at: a low wall cut down to just above the floor beside it, anything else as it is. */
+  const drawnHeights = new Map();
+  const drawn = (x, z) => {
+    const c = house.cell(x, z);
+    if (!c) return null;
+    if (c.kind !== 'wall') return c.h;
+    const key = z * house.cols + x;
+    if (drawnHeights.has(key)) return drawnHeights.get(key);
+    let beside = -Infinity;
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const n = house.cell(x + dx, z + dz);
+      if (n && n.kind !== 'wall') beside = Math.max(beside, ...n.h);
+    }
+    const top = Math.min(...c.h);
+    const h = Number.isFinite(beside) && top - beside < 1 ? Math.min(top, beside + CUT) : top;
+    const out = [h, h, h, h];
+    drawnHeights.set(key, out);
+    return out;
   };
 
   for (let z = 0; z < house.rows; z++) {
     for (let x = 0; x < house.cols; x++) {
       const c = house.cell(x, z);
       if (!c) continue;
-      const [h00, h10, h01, h11] = c.h;
+      const cut = drawn(x, z) !== c.h;
+      for (const pass of cut ? ['solid', 'drawn'] : ['both']) {
+      const hs = pass === 'drawn' ? drawn(x, z) : c.h;
+      const solid = pass !== 'drawn', show = pass !== 'solid';
+      const [h00, h10, h01, h11] = hs;
       const A = [x, h00, z], B = [x + 1, h10, z], C = [x, h01, z + 1], D = [x + 1, h11, z + 1];
       let out, base;
       if (c.kind === 'water') { out = water; base = [1, 1, 1]; }
@@ -505,21 +532,30 @@ export function buildHouse(house) {
       const col = base.map((v) => v * vary);
       const shade = (p) => (c.kind === 'water' || c.kind === 'wall' ? col : lit(col, p));
       const uv = (p) => [p[0], p[2]];
-      face(out, A, C, B, normalOf(A, C, B), [shade(A), shade(C), shade(B)], [uv(A), uv(C), uv(B)]);
-      face(out, B, C, D, normalOf(B, C, D), [shade(B), shade(C), shade(D)], [uv(B), uv(C), uv(D)]);
-      world.addTriangle(...A, ...C, ...B);
-      world.addTriangle(...B, ...C, ...D);
+      if (show) {
+        face(out, A, C, B, normalOf(A, C, B), [shade(A), shade(C), shade(B)], [uv(A), uv(C), uv(B)]);
+        face(out, B, C, D, normalOf(B, C, D), [shade(B), shade(C), shade(D)], [uv(B), uv(C), uv(D)]);
+      }
+      if (solid) {
+        world.addTriangle(...A, ...C, ...B);
+        world.addTriangle(...B, ...C, ...D);
+      }
 
       // The sides: down to the next tile, or into the dark.
       const low = Math.min(...c.h) - DEPTH;
+      const heightsOf = (i, j) => {
+        const n = house.cell(i, j);
+        return n ? { n, h: solid ? n.h : drawn(i, j) } : null;
+      };
       const edges = [
-        [[x, z], [x + 1, z], h00, h10, house.cell(x, z - 1), (n) => [n.h[H01], n.h[H11]], [0, 0, -1]],
-        [[x, z + 1], [x + 1, z + 1], h01, h11, house.cell(x, z + 1), (n) => [n.h[H00], n.h[H10]], [0, 0, 1]],
-        [[x, z], [x, z + 1], h00, h01, house.cell(x - 1, z), (n) => [n.h[H10], n.h[H11]], [-1, 0, 0]],
-        [[x + 1, z], [x + 1, z + 1], h10, h11, house.cell(x + 1, z), (n) => [n.h[H00], n.h[H01]], [1, 0, 0]],
+        [[x, z], [x + 1, z], h00, h10, heightsOf(x, z - 1), (n) => [n.h[H01], n.h[H11]], [0, 0, -1]],
+        [[x, z + 1], [x + 1, z + 1], h01, h11, heightsOf(x, z + 1), (n) => [n.h[H00], n.h[H10]], [0, 0, 1]],
+        [[x, z], [x, z + 1], h00, h01, heightsOf(x - 1, z), (n) => [n.h[H10], n.h[H11]], [-1, 0, 0]],
+        [[x + 1, z], [x + 1, z + 1], h10, h11, heightsOf(x + 1, z), (n) => [n.h[H00], n.h[H01]], [1, 0, 0]],
       ];
-      for (const [p0, p1, a0, a1, n, theirs, outward] of edges) {
-        const [b0, b1] = n ? theirs(n) : [low, low];
+      for (const [p0, p1, a0, a1, near, theirs, outward] of edges) {
+        const n = near?.n ?? null;
+        const [b0, b1] = near ? theirs(near) : [low, low];
         const d0 = a0 - b0, d1 = a1 - b1;
         if (d0 <= 1e-6 && d1 <= 1e-6) continue;
         // Papered where a wall faces a room; a riser where a floor steps down to another; the dark's edge otherwise.
@@ -529,7 +565,7 @@ export function buildHouse(house) {
           const top = Math.max(a0, a1);
           colour = (y) => {
             const k = Math.max(0, Math.min(1, 1 - (top - y) / DEPTH));
-            return sideColour.map((v) => v * (0.08 + 0.92 * k * k));
+            return sideColour.map((v) => v * (0.05 + 0.5 * k * k * k));
           };
         } else if (c.kind === 'wall' && n.kind !== 'wall') {
           into = walls;
@@ -551,7 +587,8 @@ export function buildHouse(house) {
             const ym = a0 + (a1 - a0) * t;
             return d0 > 0 ? [[0, b0], [t, ym], [0, a0]] : [[1, b1], [1, a1], [t, ym]];
           })();
-        upright(into, p0, p1, poly, outward, colour, from);
+        upright(show ? into : null, p0, p1, poly, outward, colour, from, solid);
+      }
       }
     }
   }

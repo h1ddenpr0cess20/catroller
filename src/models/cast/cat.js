@@ -16,12 +16,12 @@ const SCALE = 3;
 
 /** The coats and natures. */
 export const CAT_KINDS = {
-  ginger: { name: 'Marmalade', coat: 'ginger', speed: 5.0, sight: 7.5, fov: 2.4, wary: 1.0, ears: 1.0, play: 4.5, size: 1, reach: 0.62 },
-  black: { name: 'Soot', coat: 'black', speed: 5.6, sight: 8.5, fov: 2.2, wary: 1.1, ears: 1.2, play: 3.5, size: 1, reach: 0.62 },
-  grey: { name: 'Smoke', coat: 'grey', speed: 4.4, sight: 6.5, fov: 2.4, wary: 0.8, ears: 0.8, play: 5, size: 1, reach: 0.62 },
-  calico: { name: 'Patches', coat: 'calico', speed: 5.0, sight: 7, fov: 2.4, wary: 0.9, ears: 1.0, play: 6.5, size: 0.95, reach: 0.6 },
-  siamese: { name: 'Duchess', coat: 'siamese', speed: 5.4, sight: 9.5, fov: 2.6, wary: 1.35, ears: 1.3, play: 3.5, size: 0.95, reach: 0.6 },
-  tom: { name: 'Big Tom', coat: 'tom', speed: 4.6, sight: 9, fov: 2.5, wary: 1.2, ears: 1.1, play: 3.0, size: 1.35, reach: 0.9 },
+  ginger: { name: 'Blaze', coat: 'ginger', speed: 5.0, sight: 7.5, fov: 2.4, wary: 1.0, ears: 1.0, play: 4.5, size: 1, reach: 0.62 },
+  black: { name: 'Nyx', coat: 'black', speed: 5.6, sight: 8.5, fov: 2.2, wary: 1.1, ears: 1.2, play: 3.5, size: 1, reach: 0.62 },
+  grey: { name: 'Ghost', coat: 'grey', speed: 4.4, sight: 6.5, fov: 2.4, wary: 0.8, ears: 0.8, play: 5, size: 1, reach: 0.62 },
+  calico: { name: 'Jinx', coat: 'calico', speed: 5.0, sight: 7, fov: 2.4, wary: 0.9, ears: 1.0, play: 6.5, size: 0.95, reach: 0.6 },
+  siamese: { name: 'Vex', coat: 'siamese', speed: 5.4, sight: 9.5, fov: 2.6, wary: 1.35, ears: 1.3, play: 3.5, size: 0.95, reach: 0.6 },
+  tom: { name: 'Brutus', coat: 'tom', speed: 4.6, sight: 9, fov: 2.5, wary: 1.2, ears: 1.1, play: 3.0, size: 1.35, reach: 0.9 },
 };
 
 // ——————————————————————————————————————— coats

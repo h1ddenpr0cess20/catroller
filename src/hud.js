@@ -36,6 +36,8 @@ export function createHud(root, { onStart }) {
   let shown = false;
   let mapEvery = 0;
   let mapScale = 2;
+  /** The corner of the room's bounds, so the map shows the room and not the grid round it. */
+  let mapAt = [0, 0];
   let catRows = [];
   let lastMetres = null;
 
@@ -49,6 +51,8 @@ export function createHud(root, { onStart }) {
     const { level, explored, ball } = sneak;
     const s = mapScale;
     ctx.clearRect(0, 0, mapEl.width, mapEl.height);
+    ctx.save();
+    ctx.translate(-mapAt[0] * s, -mapAt[1] * s);
     for (let z = 0; z < level.rows; z++) {
       for (let x = 0; x < level.cols; x++) {
         if (!explored[z * level.cols + x]) continue;
@@ -83,6 +87,7 @@ export function createHud(root, { onStart }) {
     ctx.arc(ball.x * s, ball.z * s, s * 1.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
   }
 
   return {
@@ -156,10 +161,19 @@ export function createHud(root, { onStart }) {
 
     /** A new level: a map canvas to fit it. */
     map(sneak) {
-      const { cols, rows } = sneak.level;
-      mapScale = Math.max(1, Math.floor(180 / Math.max(cols, rows)));
-      mapEl.width = cols * mapScale;
-      mapEl.height = rows * mapScale;
+      const { level } = sneak;
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+      for (let z = 0; z < level.rows; z++) {
+        for (let x = 0; x < level.cols; x++) {
+          if (!level.cell(x, z)) continue;
+          x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+        }
+      }
+      const w = x1 - x0 + 1, d = z1 - z0 + 1;
+      mapScale = Math.max(2, Math.floor(360 / Math.max(w, d)));
+      mapAt = [x0, z0];
+      mapEl.width = w * mapScale;
+      mapEl.height = d * mapScale;
       drawMap(sneak);
     },
 

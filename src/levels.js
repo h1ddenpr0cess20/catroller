@@ -377,12 +377,12 @@ function cellar() {
 }
 
 /**
- * 7. The front hall, and the way out: a long runner, coats and boots, the
- * Big Tom by the door, and the cat flap.
+ * 7. The front hall, and the way out: a long runner, coats and boots,
+ * Brutus by the door, and the cat flap.
  */
 function frontHall() {
   const c = new House({ name: 'The Front Hall', depth: 7, cols: 100, rows: 100, palette: LANDING, next: '',
-    intro: 'Past the Big Tom, and out through the cat flap.' });
+    intro: 'Past Brutus, and out through the cat flap.' });
   const d = digger(c, { x: 3, z: 10, h: 30, heading: '+x', floor: 'wood', paper: 0 });
   const back = d.hall(6, { width: 3 });
   c.seal(back, 'x0');
@@ -398,7 +398,7 @@ function frontHall() {
   c.put('coatStand', ...hall.tile(22, -3));
   c.put('trunk', ...hall.tile(9, 2));
   c.put('plant', ...hall.tile(19, 2));
-  c.cat('siamese', ...hall.tile(8, 0), { does: 'patrol', path: [hall.tile(2, 0), hall.tile(15, 0)], range: 10 });
+  c.cat('siamese', ...hall.tile(14, -1), { does: 'patrol', path: [hall.tile(12, -1), hall.tile(21, -1)], range: 10 });
   c.critter('fly', ...hall.tile(17, -2));
   c.cat('calico', ...hall.tile(16, 1), { does: 'sit', facing: 3.6 });
   c.critter('mouse', ...hall.tile(13, 2));
@@ -409,7 +409,7 @@ function frontHall() {
   c.skein(...hall.tile(23, 2), 8);
   c.lamp(...hall.tile(5, -4), 2.6).lamp(...hall.tile(14, -4), 2.6).lamp(...hall.tile(23, -4), 2.6);
   d.turn('+z', { width: 7 });
-  // The porch: the Big Tom keeps the door.
+  // The porch: Brutus keeps the door.
   const porch = d.hall(12, { width: 7, paper: 1 });
   c.put('shoeRack', ...porch.tile(2, 3), { facing: '+x' });
   c.put('plant', ...porch.tile(9, 3));

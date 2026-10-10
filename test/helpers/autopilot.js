@@ -107,7 +107,7 @@ export function plan(sneak, net, from, to) {
  * Rolls level `index` to the doorway. Returns whether it got there, how
  * long it took, every way the ball was lost, and how much yarn it has left.
  */
-export function drive(index, { limit = 600, sample = null } = {}) {
+export function drive(index, { limit = 600, sample = null, quiet = true } = {}) {
   let sneak = null;
   const yarn = createBall(GFX, (x, z) => sneak?.level.heightAt(x, z) ?? null);
   sneak = createSneak(GFX, index, { yarn });
@@ -150,7 +150,9 @@ export function drive(index, { limit = 600, sample = null } = {}) {
     let px = (vx - b.vx) * 0.9, pz = (vz - b.vz) * 0.9;
     const l = Math.hypot(px, pz);
     if (l > 1) { px /= l; pz /= l; }
-    const out = stepSneak(sneak, [px, pz], STEP, { quiet: true });
+    const out = stepSneak(sneak, [px, pz], STEP, { quiet });
+    if (out.noticed.length) snags.push(`noticed by ${out.noticed.map((c) => c.kind)} at ${t.toFixed(1)}`);
+    if (out.caught) snags.push(`caught by ${out.caught.kind} at ${t.toFixed(1)}`);
     sample?.(sneak);
     if (Math.hypot(b.vx, b.vz) < 0.05) still += STEP; else still = 0;
     if (still > 15) return { finished: false, time: t, losses, snags, stuck: { at: here(), wp, of: route.length } };
