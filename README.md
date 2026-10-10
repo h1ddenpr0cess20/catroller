@@ -135,9 +135,10 @@ near you.
 | `src/yarn/ball.js` | Carol's ball rolled by the game's physics instead of along Carol's route. It rolls free until something catches the end, then lays the strand out along the floor and poses the ball from it. It also winds the strand back on, snaps it, and cuts off the piece that is left behind. |
 | `src/physics.js` | The ball physics, as Dungeon Roller has it. |
 | `src/house.js`, `src/dig.js` | Tiles with four corner heights, as Dungeon Roller's dungeons have, turned into rooms: floors of wood, carpet, tile, boards and stone, papered walls, stairs, spills, and the furniture. The digger lays a level out a piece at a time. |
-| `src/furniture.js`, `src/scenery.js` | The furniture, as boxes for the physics and the cats, and the painted textures. |
+| `src/furniture.js`, `src/scenery.js` | The furniture: solid boxes for the physics and the cats, and everything drawn over them, from cushions and turned legs to books, piano keys and a fire in the grate. Also the painted textures. |
+| `src/shapes.js` | The shapes the furniture and props are made of: rounded boxes, cushions, lathe turnings, swept baths and basins, tubes, leaves and rows of books. |
 | `src/levels.js` | The seven rooms. |
-| `src/models/` | The cats and the mouse, sculpted in code from signed distance fields, rigged and baked in workers. See `models.html` for a turntable. |
+| `src/models/` | The cats and the mouse, sculpted in code from signed distance fields, rigged and baked in workers. The cats are built bone by bone like a real cat, so they can sit on their haunches, curl up in a loaf, walk and gallop, and they blend from one pose to the next. See `models.html` for a turntable. |
 | `src/nav.js` | How the cats find their way round the furniture. |
 | `src/cats.js` | What each cat sees and hears, and what it does about it. |
 | `src/critters.js` | Mice, flies and beetles: their rounds, and where they bolt to. |

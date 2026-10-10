@@ -33,7 +33,7 @@ export default {
   scale: 0.6,
   cell: 0.0075,
   // The small, sharp things get a finer grid of their own.
-  cells: { eyes: 0.0024, irises: 0.0014, pupils: 0.001, teeth: 0.0025, ears: 0.003 },
+  cells: { eyes: 0.0024, irises: 0.0014, pupils: 0.001, teeth: 0.002, ears: 0.0013 },
   bones: [
     ['root', null, [0, 0, 0]],
     ['body', 'root', [0, 0.16, -0.04]],
@@ -66,15 +66,13 @@ export default {
     mouth: { roughness: 0.4, clearcoat: 0.8 },
   },
   sculpt(s) {
-    const F = { color: fur, mat: 'fur', locks: [0.022, 0.0045, 2, 3.2] };
+    const F = { color: fur, mat: 'fur' };
     const H = { color: fur, mat: 'fur' };
     // Body: big haunches, narrower chest, a sagging belly, a hunched neck.
     s.ellipsoid([0, 0.17, -0.07], [0.13, 0.128, 0.165], { ...F, bone: 'body', k: 0.02, rot: [-0.15, 0, 0] });
     s.ellipsoid([0, 0.125, -0.01], [0.1, 0.075, 0.14], { ...F, bone: 'body', k: 0.06 });
     s.ellipsoid([0, 0.168, 0.085], [0.094, 0.1, 0.115], { ...F, bone: 'chest', k: 0.07, rot: [0.25, 0, 0] });
     s.limb([0, 0.2, 0.09], [0, 0.215, 0.18], 0.078, 0.066, { ...F, bone: 'chest', k: 0.05 });
-    // A ridge down the spine.
-    s.chain([[0, 0.28, -0.12], [0, 0.275, 0.0], [0, 0.262, 0.1]], [0.025, 0.03, 0.022], { ...F, bone: 'body', k: 0.06 });
 
     // Head: a long wedge of a skull, fat cheeks, a blunt snout with a pink nose.
     s.ellipsoid([0, 0.218, 0.212], [0.074, 0.07, 0.088], { ...H, bone: 'head', k: 0.05 });
@@ -82,11 +80,10 @@ export default {
     s.limb([0, 0.206, 0.25], [0, 0.191, 0.338], 0.05, 0.022, { ...H, bone: 'head', k: 0.03 });
     s.sphere([0, 0.193, 0.352], 0.017, { color: '#e79a9a', mat: 'nose', bone: 'head', k: 0.012 });
     s.mirror((m) => s.sphere([m * 0.008, 0.189, 0.364], 0.005, { op: 'sub', k: 0.004 }));
-    // The lower jaw, with a slit of a mouth between it and the snout.
+    // The lower jaw, tucked under the snout.
     s.limb([0, 0.165, 0.228], [0, 0.157, 0.302], 0.034, 0.013, { ...H, bone: 'jaw', k: 0.03 });
-    s.box([0, 0.169, 0.3], [0.05, 0.0045, 0.055], 0.003, { op: 'sub', k: 0.008, rot: [-0.12, 0, 0] });
-    // Little white incisors.
-    s.part('teeth', () => s.mirror((m) => s.box([m * 0.0058, 0.159, 0.337], [0.0052, 0.0155, 0.0038], 0.0022, { color: '#f2ead6', mat: 'tooth', bone: 'head', k: 0.002, rot: [0.22, 0, m * 0.06] })));
+    // Little incisors, just showing under the nose.
+    s.part('teeth', () => s.mirror((m) => s.box([m * 0.0042, 0.168, 0.33], [0.0038, 0.0085, 0.0028], 0.0016, { color: '#efe2c4', mat: 'tooth', bone: 'head', k: 0.002, rot: [0.22, 0, m * 0.05] })));
     // Eye sockets.
     s.mirror((m) => s.sphere([m * 0.05, 0.233, 0.272], 0.021, { op: 'sub', k: 0.01 }));
     // Eyes: bright black beads.
@@ -106,9 +103,9 @@ export default {
       const R = rotation(rot);
       const c = [m * 0.068, 0.296, 0.18];
       const f = turn(R, [0, 0, 1]);
-      s.ellipsoid(c, [0.064, 0.068, 0.011], { ...H, bump: null, bone: `ear${side(m)}`, k: 0.02, rot });
+      s.ellipsoid(c, [0.064, 0.068, 0.0145], { ...H, bump: null, bone: `ear${side(m)}`, k: 0.02, rot });
       const cup = [c[0] + f[0] * 0.012, c[1] + f[1] * 0.012 + 0.004, c[2] + f[2] * 0.012];
-      s.ellipsoid(cup, [0.05, 0.054, 0.007], { op: 'sub', k: 0.01, rot });
+      s.ellipsoid(cup, [0.052, 0.056, 0.0085], { op: 'sub', k: 0.012, rot });
       s.paint((p) => {
         const q = [p[0] - cup[0], p[1] - cup[1], p[2] - cup[2]];
         return Math.hypot(q[0], q[1], q[2]) - 0.058;
@@ -132,7 +129,7 @@ export default {
     // A long, bare, scaly tail.
     s.chain(
       [[0, 0.15, -0.21], [0, 0.118, -0.34], [0.02, 0.074, -0.47], [0.06, 0.034, -0.6], [0.11, 0.018, -0.72]],
-      [0.036, 0.026, 0.019, 0.012, 0.005],
+      [0.027, 0.02, 0.015, 0.01, 0.005],
       { color: tail, mat: 'skin', bones: ['tail1', 'tail2', 'tail3', 'tail4'], k: 0.02 },
     );
   },

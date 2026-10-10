@@ -1,5 +1,5 @@
 import { place } from './furniture.js';
-import { ball, books, cushion, joined, lathe, leaf, moved, ring, roundedBox, slab, swept, tinted, tube } from './shapes.js';
+import { ball, books, cushion, geometry, joined, lathe, leaf, moved, ring, roundedBox, slab, swept, tinted, tube } from './shapes.js';
 import { createWaterMaterial } from './water.js';
 
 /**
@@ -710,16 +710,32 @@ export function createLamps(GFX, house) {
   const brass = new GFX.MeshPhysicalMaterial({ name: 'sconce', color: new GFX.Color('#c8a050'), roughness: 0.3, metalness: 1 });
   const shade = new GFX.MeshPhysicalMaterial({ name: 'sconce-shade', color: new GFX.Color('#f6e6c0'), emissive: new GFX.Color('#ffc870'), emissiveIntensity: 1.8, roughness: 0.9, side: GFX.DoubleSide });
   const bulbs = [];
+  // A brass wall light: a plate on the wall, an arm curling out and up, a cup of a shade on it, lit from inside.
+  const sconce = {
+    arm: geometry(GFX, joined([
+      tube([[0, -0.75, 0], [0, -0.68, 0.1], [0, -0.48, 0.2], [0, -0.28, 0.22]], 0.035, { radial: 8 }),
+      moved(lathe([[0, 0], [0.14, 0], [0.15, 0.02], [0.1, 0.05], [0, 0.05]], 18), [0, -0.75, 0.0], [-Math.PI / 2, 0, 0]),
+      moved(lathe([[0, 0], [0.07, 0], [0.08, 0.04], [0.05, 0.08], [0, 0.08]], 14), [0, -0.3, 0.22]),
+    ])),
+    shade: geometry(GFX, moved(lathe([[0.32, 0], [0.31, 0.04], [0.26, 0.2], [0.22, 0.34], [0.22, 0.36]], 24), [0, -0.3, 0.22])),
+  };
   for (const [x, y, z] of house.lamps) {
     const g = new GFX.Group();
-    g.position.set(x, y, z);
-    const arm = new GFX.Mesh(new GFX.CylinderGeometry(0.04, 0.04, 0.5, 8), brass);
-    arm.position.y = -0.35;
-    const cup = new GFX.Mesh(new GFX.CylinderGeometry(0.22, 0.32, 0.36, 16, 1, true), shade);
+    // On the face of the wall toward the room, turned to face into it.
+    const cx = Math.floor(x), cz = Math.floor(z);
+    const into = [[0, 1], [0, -1], [1, 0], [-1, 0]].find(([dx, dz]) => {
+      const n = house.cell(cx + dx, cz + dz);
+      return n && n.kind !== 'wall';
+    }) ?? [0, 1];
+    const onWall = house.cell(cx, cz)?.kind === 'wall';
+    g.position.set(x + (onWall ? into[0] * 0.5 : 0), y, z + (onWall ? into[1] * 0.5 : 0));
+    g.rotation.y = Math.atan2(into[0], into[1]);
+    const arm = new GFX.Mesh(sconce.arm, brass);
+    const cup = new GFX.Mesh(sconce.shade, shade);
     g.add(arm, cup);
     arm.castShadow = true;
     group.add(g);
-    bulbs.push([x, y, z]);
+    bulbs.push([g.position.x + into[0] * 0.25, y - 0.15, g.position.z + into[1] * 0.25]);
   }
   for (const f of house.furniture) if (f.lamp) bulbs.push(f.lamp);
   return { group, bulbs };
@@ -765,12 +781,12 @@ export function createExit(GFX, house, { last = false } = {}) {
     else mesh.position.set(side.at + off, up, a);
   };
   const lintel = side.along === 'x'
-    ? new GFX.Mesh(new GFX.BoxGeometry(width + 0.6, 0.35, 0.4), paint)
-    : new GFX.Mesh(new GFX.BoxGeometry(0.4, 0.35, width + 0.6), paint);
+    ? new GFX.Mesh(geometry(GFX, roundedBox(width + 0.7, 0.4, 0.42, 0.06, 2)), paint)
+    : new GFX.Mesh(geometry(GFX, roundedBox(0.42, 0.4, width + 0.7, 0.06, 2)), paint);
   place(lintel, from + width / 2, y + height + 0.17);
   group.add(lintel);
   for (const a of [from - 0.1, to + 0.1]) {
-    const post = new GFX.Mesh(new GFX.BoxGeometry(0.3, height, 0.3), paint);
+    const post = new GFX.Mesh(geometry(GFX, roundedBox(0.32, height, 0.32, 0.05, 2)), paint);
     place(post, a, y + height / 2);
     group.add(post);
   }

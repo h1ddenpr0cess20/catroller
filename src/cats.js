@@ -451,16 +451,66 @@ export function createCatMesh(GFX, kind) {
   const name = `cat-${CAT_KINDS[kind].coat}`;
   const group = new GFX.Group();
   group.name = name;
-  let model = null;
+  let model = null, lines = null, head = 0;
   const attach = () => {
     model = createModel(GFX, CAT_DEFS[name], { detail: BOARD_DETAIL });
     group.add(model.group);
+    lines = whiskers(GFX);
+    lines.matrixAutoUpdate = false;
+    model.mesh.add(lines);
+    head = model.skeleton.index.get('head') * 12;
   };
   if (isBaked(name, BOARD_DETAIL)) attach();
   else if (typeof window !== 'undefined') ready(name, BOARD_DETAIL).then(attach);
   return {
     group,
     get model() { return model; },
-    animate(state) { model?.pose(state); },
+    animate(state) {
+      if (!model) return;
+      model.pose(state);
+      // The whiskers go where the head goes: its bone's matrix (3 × 4, by rows) as theirs (4 × 4, by columns).
+      const M = model.skeleton.matrices, e = lines.matrix.elements, o = head;
+      e[0] = M[o]; e[1] = M[o + 4]; e[2] = M[o + 8]; e[3] = 0;
+      e[4] = M[o + 1]; e[5] = M[o + 5]; e[6] = M[o + 9]; e[7] = 0;
+      e[8] = M[o + 2]; e[9] = M[o + 6]; e[10] = M[o + 10]; e[11] = 0;
+      e[12] = M[o + 3]; e[13] = M[o + 7]; e[14] = M[o + 11]; e[15] = 1;
+      lines.matrixWorldNeedsUpdate = true;
+    },
   };
+}
+
+const whiskerShapes = new WeakMap();
+
+/**
+ * A cat's whiskers, as fine lines in the sculpt's frame: four from each
+ * whisker pad, fanned and drooping, and two over each eye. One shape for
+ * every cat.
+ */
+function whiskers(GFX) {
+  if (!whiskerShapes.has(GFX)) {
+    const pts = [];
+    const strand = (root, dir, len, droop) => {
+      const l = Math.hypot(...dir), d = dir.map((v) => v / l);
+      let prev = root;
+      for (let j = 1; j <= 5; j++) {
+        const t = j / 5;
+        const p = [root[0] + d[0] * len * t, root[1] + d[1] * len * t - droop * t * t, root[2] + d[2] * len * t];
+        pts.push(...prev, ...p);
+        prev = p;
+      }
+    };
+    for (const m of [1, -1]) {
+      for (let k = 0; k < 4; k++) strand([m * (0.0135 + k * 0.0012), 0.2815 - k * 0.0028, 0.2465 - k * 0.0012], [m, 0.16 - k * 0.11, 0.32 - k * 0.2], 0.058 - k * 0.004, 0.01 + k * 0.002);
+      for (let k = 0; k < 2; k++) strand([m * (0.016 + k * 0.006), 0.318, 0.233 - k * 0.003], [m * 0.7, 0.8, 0.4], 0.03 - k * 0.006, 0.006);
+    }
+    const geometry = new GFX.BufferGeometry();
+    geometry.setAttribute('position', new GFX.BufferAttribute(new Float32Array(pts), 3));
+    geometry.computeBoundingSphere();
+    const material = new GFX.LineBasicMaterial({ name: 'whiskers', color: new GFX.Color('#f4f0e8'), transparent: true, opacity: 0.7 });
+    whiskerShapes.set(GFX, { geometry, material });
+  }
+  const { geometry, material } = whiskerShapes.get(GFX);
+  const lines = new GFX.LineSegments(geometry, material);
+  lines.name = 'whiskers';
+  return lines;
 }
