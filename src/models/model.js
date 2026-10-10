@@ -134,6 +134,9 @@ export function createModel(GFX, def, { detail = 1 } = {}) {
   mesh.scale.setScalar(def.scale ?? 1);
   group.add(mesh);
   const skeleton = new Skeleton(def.bones);
+  // Going from one clip to the next (if the definition asks, over `def.blend` seconds): from where it was.
+  let clip = null, from = null;
+  const snapshot = () => skeleton.pose.map((p) => ({ rot: [...p.rot], move: [...p.move], scale: [...p.scale] }));
   return {
     def,
     group,
@@ -142,8 +145,27 @@ export function createModel(GFX, def, { detail = 1 } = {}) {
     materials: mesh.material,
     /** Poses it for `state` ({ clip, t, time, seed, … }) and moves the skin to match. */
     pose(state) {
+      if (def.blend && state.clip !== clip) {
+        from = clip === null ? null : snapshot();
+        clip = state.clip;
+      }
       skeleton.reset();
       def.animate?.(skeleton, state);
+      if (from) {
+        const x = Math.min(1, Math.max(0, (state.t ?? 1) / def.blend));
+        const k = x * x * (3 - 2 * x);
+        if (k >= 1) from = null;
+        else {
+          skeleton.pose.forEach((p, b) => {
+            const f = from[b];
+            for (let i = 0; i < 3; i++) {
+              p.rot[i] = f.rot[i] + (p.rot[i] - f.rot[i]) * k;
+              p.move[i] = f.move[i] + (p.move[i] - f.move[i]) * k;
+              p.scale[i] = f.scale[i] + (p.scale[i] - f.scale[i]) * k;
+            }
+          });
+        }
+      }
       skeleton.compute();
       skin(data, skeleton.matrices, position.array, normal.array);
       position.needsUpdate = true;

@@ -532,7 +532,22 @@ export function buildHouse(house) {
       const col = base.map((v) => v * vary);
       const shade = (p) => (c.kind === 'water' || c.kind === 'wall' ? col : lit(col, p));
       const uv = (p) => [p[0], p[2]];
-      if (show) {
+      if (show && c.kind === 'water') {
+        // A spill: the floor under it, and the water just over the floor, its uv how far in from the spill's edge each corner is
+        // (the water shader frays it into a puddle).
+        const under = floors[c.floor] ?? floors.tile, base2 = tint(c.floor, c.color);
+        const fl = (p) => lit(base2, p);
+        face(under, A, C, B, normalOf(A, C, B), [fl(A), fl(C), fl(B)], [uv(A), uv(C), uv(B)]);
+        face(under, B, C, D, normalOf(B, C, D), [fl(B), fl(C), fl(D)], [uv(B), uv(C), uv(D)]);
+        const wet = (cx, cz) => {
+          for (const [i, j] of [[cx - 1, cz - 1], [cx, cz - 1], [cx - 1, cz], [cx, cz]]) if (house.cell(i, j)?.kind !== 'water') return 0;
+          return 1;
+        };
+        const up = (p) => [p[0], p[1] + 0.012, p[2]];
+        const e = (p) => [wet(p[0], p[2]), 0];
+        face(out, up(A), up(C), up(B), normalOf(A, C, B), [col, col, col], [e(A), e(C), e(B)]);
+        face(out, up(B), up(C), up(D), normalOf(B, C, D), [col, col, col], [e(B), e(C), e(D)]);
+      } else if (show) {
         face(out, A, C, B, normalOf(A, C, B), [shade(A), shade(C), shade(B)], [uv(A), uv(C), uv(B)]);
         face(out, B, C, D, normalOf(B, C, D), [shade(B), shade(C), shade(D)], [uv(B), uv(C), uv(D)]);
       }

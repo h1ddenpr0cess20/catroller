@@ -7,14 +7,17 @@
  */
 
 const GLSL_VERTEX = `varying vec3 vWorld;
+varying float vEdge;
 void main() {
   vec4 world = modelMatrix * vec4(position, 1.0);
   vWorld = world.xyz;
+  vEdge = uv.x;
   gl_Position = projectionMatrix * viewMatrix * world;
 }`;
 
 const GLSL_FRAGMENT = `uniform float uTime;
 varying vec3 vWorld;
+varying float vEdge;
 float hash1(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 vec2 hash2(vec2 p) { return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)))) * 43758.5453); }
 float vnoise(vec2 p) {
@@ -24,6 +27,10 @@ float vnoise(vec2 p) {
 void main() {
   float t = uTime;
   vec2 p = vWorld.xz;
+  // Frayed into a puddle: in from the spill's edge by up to a third of a tile, by noise.
+  float fray = vnoise(p * 1.7) * 0.7 + vnoise(p * 4.3) * 0.3;
+  float inside = vEdge - fray * 0.36;
+  if (inside < 0.0) discard;
   // Two sets of ripples crossing, and a slow swell under them.
   float a = vnoise(p * 2.2 + vec2(t * 0.35, t * 0.22));
   float b = vnoise(p * 3.1 - vec2(t * 0.28, -t * 0.31));
@@ -44,14 +51,17 @@ void main() {
     float ring = (1.0 - smoothstep(0.0, 0.04, abs(d - r))) * (1.0 - phase);
     col += vec3(0.8, 0.9, 1.0) * ring * 0.5;
   }
+  // Shallow at the edge: the floor's own colour showing through.
+  col = mix(col * 0.7 + vec3(0.12, 0.12, 0.14), col, smoothstep(0.0, 0.08, inside));
   gl_FragColor = vec4(col, 1.0);
 }`;
 
-const WGSL = `struct Varyings { @builtin(position) position: vec4f, @location(0) world: vec3f };
-@vertex fn vs(@location(0) position: vec3f) -> Varyings {
+const WGSL = `struct Varyings { @builtin(position) position: vec4f, @location(0) world: vec3f, @location(1) edge: f32 };
+@vertex fn vs(@location(0) position: vec3f, @location(2) uv: vec2f) -> Varyings {
   var out: Varyings;
   let world = object.modelMatrix * vec4f(position, 1.0);
   out.world = world.xyz;
+  out.edge = uv.x;
   out.position = object.projectionMatrix * object.viewMatrix * world;
   return out;
 }
@@ -66,6 +76,9 @@ fn vnoise(p: vec2f) -> f32 {
 @fragment fn fs(in: Varyings) -> @location(0) vec4f {
   let t = material.uTime;
   let p = in.world.xz;
+  let fray = vnoise(p * 1.7) * 0.7 + vnoise(p * 4.3) * 0.3;
+  let inside = in.edge - fray * 0.36;
+  if (inside < 0.0) { discard; }
   let a = vnoise(p * 2.2 + vec2f(t * 0.35, t * 0.22));
   let b = vnoise(p * 3.1 - vec2f(t * 0.28, -t * 0.31));
   let swell = vnoise(p * 0.6 + t * 0.05);
@@ -85,6 +98,7 @@ fn vnoise(p: vec2f) -> f32 {
     let ring = (1.0 - smoothstep(0.0, 0.04, abs(d - r))) * (1.0 - phase);
     col += vec3f(0.8, 0.9, 1.0) * ring * 0.5;
   }
+  col = mix(col * 0.7 + vec3f(0.12, 0.12, 0.14), col, smoothstep(0.0, 0.08, inside));
   return vec4f(col, 1.0);
 }`;
 

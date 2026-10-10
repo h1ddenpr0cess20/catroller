@@ -53,7 +53,7 @@ test('safe ground: level floor away from edges, water, stairs and furniture', ()
   assert.ok(!c.isSafe(6, 2), 'next to a hole');
 });
 
-test('the built house: floors by what they are made of, papered walls, the water apart, and the furniture solid', () => {
+test('the built house: floors by what they are made of, papered walls, the water over its own floor, and the furniture solid', () => {
   const c = make(24, 24);
   c.room(1, 1, 10, 10, 0, { floor: 'wood' });
   c.flat(11, 3, 4, 4, 0, { floor: 'carpet' });
@@ -62,7 +62,8 @@ test('the built house: floors by what they are made of, papered walls, the water
   const built = buildHouse(c.settle());
   assert.ok(built.floors.wood.position.length > 0);
   assert.ok(built.floors.carpet.position.length > 0);
-  assert.equal(built.floors.tile.position.length, 0);
+  // The floor goes on under the spill, so the water can fray into a puddle over it.
+  assert.equal(built.floors.tile.position.length, 4 * 2 * 9, 'the tiles under the spill');
   assert.ok(built.walls.position.length > 0, 'wallpaper');
   assert.equal(built.water.position.length, 4 * 2 * 9, 'two triangles a tile of water');
   // Something solid where the bookcase is: a ball dropped onto it rests on its top.

@@ -4,8 +4,16 @@ import { mix, smooth } from '../skins.js';
 /**
  * The cats: one sculpt — a cat standing, facing +z, feet on y = 0, about a
  * tile and a half nose to rump and a tile to the top of its head — in six
- * coats, each its own bake. Long legs, a deep chest, a tail held up with a
- * crook at its tip, big ears, and eyes that catch the light.
+ * coats, each its own bake.
+ *
+ * It is built the way a cat is: a deep ribcage and a lighter loin, round
+ * haunches, a neck up from between the shoulder blades, a small round head
+ * with a short muzzle, big eyes and tall ears. The legs are a cat's legs —
+ * the front ones from the shoulder back to the elbow and down to the wrist,
+ * the hind ones a big thigh forward to the knee, a long shin back to the
+ * hock, and the foot down from it — so that it can sit on its haunches with
+ * its hind feet flat, and walk a cat's walk. The tail is slim and as long
+ * as the body, held straight back at rest and posed by every clip.
  *
  * Each kind is also a nature: how fast it runs, how far it sees and how
  * wide, how wary it is, how keen its ears, how long it plays.
@@ -24,62 +32,140 @@ export const CAT_KINDS = {
   tom: { name: 'Brutus', coat: 'tom', speed: 4.6, sight: 9, fov: 2.5, wary: 1.2, ears: 1.1, play: 3.0, size: 1.35, reach: 0.9 },
 };
 
+// ——————————————————————————————————————— the skeleton
+
+/** The joints, on the left (+x) side; the right is the mirror of it. */
+const J = {
+  shoulder: [0.046, 0.2, 0.105],
+  elbow: [0.049, 0.118, 0.08],
+  wrist: [0.047, 0.03, 0.098],
+  hip: [0.05, 0.185, -0.115],
+  knee: [0.055, 0.112, -0.07],
+  hock: [0.055, 0.052, -0.148],
+  heel: [0.053, 0.017, -0.126],
+};
+const at = (j, m) => [m * j[0], j[1], j[2]];
+
+/** The tail, straight back from the rump with a little droop: the points between its five bones. */
+const TAIL = [[0, 0.215, -0.172], [0, 0.212, -0.232], [0, 0.209, -0.292], [0, 0.206, -0.35], [0, 0.204, -0.405], [0, 0.203, -0.452]];
+const TAIL_R = [0.0158, 0.0136, 0.0124, 0.0113, 0.0102, 0.0082];
+
+/** The eyes: where each sits, and which way it looks. */
+const EYE = [0.0205, 0.2985, 0.2255];
+const EYE_DIR = [0.36, 0.05, 0.93];
+
+const legBones = (m) => {
+  const s = m > 0 ? 'L' : 'R';
+  return [
+    [`fl1${s}`, 'chest', at(J.shoulder, m)],
+    [`fl2${s}`, `fl1${s}`, at(J.elbow, m)],
+    [`fl3${s}`, `fl2${s}`, at(J.wrist, m)],
+    [`hl1${s}`, 'body', at(J.hip, m)],
+    [`hl2${s}`, `hl1${s}`, at(J.knee, m)],
+    [`hl3${s}`, `hl2${s}`, at(J.hock, m)],
+    [`hl4${s}`, `hl3${s}`, at(J.heel, m)],
+  ];
+};
+
+const BONES = [
+  ['root', null, [0, 0, 0]],
+  // The body turns about the hips: down on its haunches, or up.
+  ['body', 'root', [0, 0.185, -0.115]],
+  ['chest', 'body', [0, 0.2, -0.02]],
+  ['neck', 'chest', [0, 0.235, 0.115]],
+  ['head', 'neck', [0, 0.282, 0.175]],
+  ['jaw', 'head', [0, 0.274, 0.212]],
+  ['earL', 'head', [0.033, 0.326, 0.19]],
+  ['earR', 'head', [-0.033, 0.326, 0.19]],
+  ['eyeL', 'head', [EYE[0], EYE[1], EYE[2]]],
+  ['eyeR', 'head', [-EYE[0], EYE[1], EYE[2]]],
+  ...legBones(1),
+  ...legBones(-1),
+  // The tail's root: turned level again, its bones swing round flat on the floor whatever the body is doing.
+  ['tail0', 'body', TAIL[0]],
+  ['tail1', 'tail0', TAIL[0]],
+  ['tail2', 'tail1', TAIL[1]],
+  ['tail3', 'tail2', TAIL[2]],
+  ['tail4', 'tail3', TAIL[3]],
+  ['tail5', 'tail4', TAIL[4]],
+];
+
 // ——————————————————————————————————————— coats
 
 const C = (hex) => rgb(hex);
 const lerp3 = (a, b, t) => mix(a, b, Math.max(0, Math.min(1, t)));
 
-/** Lighter underneath: the belly, the chest, the chin and the insides of the legs. */
-const belly = (p, n, over, under, edge = 0.1) => lerp3(under, over, smooth(-0.55, edge, n[1] + (p[2] > 0.2 ? -0.3 : 0)));
+const isTail = (p) => p[2] < -0.19;
 
-/** Fine grain along the way the fur lies: back along z on the body. */
-const hairs = (p, k = 0.18) => 1 + (noise(p[0] * 260, p[1] * 260, p[2] * 60) - 0.5) * 2 * k;
+/**
+ * How much of the pale underside a point is: the belly and the undersides
+ * of the legs and tail, the throat and chest, the muzzle and chin.
+ */
+function pale(p, n) {
+  const under = smooth(0.05, -0.55, n[1]);
+  const throat = smooth(0.15, 0.6, n[2]) * smooth(0.275, 0.21, p[1]) * smooth(0.08, 0.14, p[2]) * smooth(0.05, 0.02, Math.abs(p[0]));
+  const muzzle = smooth(0.228, 0.248, p[2]) * smooth(0.296, 0.282, p[1]);
+  return Math.max(under, throat, muzzle);
+}
 
-/** Tabby stripes: round the body and the legs and the tail, broken up, with an M on the brow. */
-function stripes(p, period = 0.042) {
+/** Fine grain along the way the fur lies. */
+const hairs = (p, k = 0.1) => 1 + (noise(p[0] * 220, p[1] * 220, p[2] * 70) - 0.5) * 2 * k;
+
+/** Soft variation over the coat, so no colour is flat. */
+const shade = (p, k = 0.12) => 1 + (fbm(p[0] * 18, p[1] * 18, p[2] * 18, 2) - 0.5) * 2 * k;
+
+/** Tabby stripes: rings round the tail, bars on the legs, bands swept down the sides, lines over the crown. */
+function stripes(p, period = 0.04) {
   const wob = (fbm(p[0] * 14, p[1] * 14, p[2] * 14, 2) - 0.5) * 0.06;
   let s;
-  if (p[2] < -0.17) s = (p[1] + p[2] * 0.4) / period; // the tail: rings
-  else if (p[1] < 0.15) s = p[1] / (period * 0.8); // the legs: bars
-  else s = p[2] / period + Math.abs(p[0]) * 4; // the body: round it, swept back down the sides
+  if (isTail(p)) s = p[2] / (period * 0.85);
+  else if (p[1] < 0.13 && p[2] < 0.15) s = p[1] / (period * 0.65);
+  else if (p[2] > 0.15) {
+    // The head: the M on the brow and lines back over the crown, nothing on the face.
+    if (p[1] < 0.312) return 0;
+    s = p[0] / 0.011;
+  } else s = p[2] / period + Math.abs(p[0]) * 3.5 - p[1] * 0.8;
   const f = Math.abs(((s + wob / period) % 1 + 1) % 1 - 0.5) * 2;
   return smooth(0.55, 0.85, f);
 }
 
-/** How far toward the tips — the face, the ears, the paws, the tail — for Siamese points. */
+/** How far toward the tips — the mask, the ears, the feet, the tail — for Siamese points. */
 function points(p) {
-  const face = smooth(0.2, 0.27, p[2]) * smooth(0.25, 0.3, p[1] + (p[2] - 0.22) * 0.5);
-  const ears = smooth(0.34, 0.37, p[1]);
-  const paws = smooth(0.07, 0.03, p[1]);
-  const tail = smooth(-0.2, -0.27, p[2]) * smooth(0.18, 0.22, p[1]);
-  return Math.max(face, ears, paws, tail);
+  const mask = smooth(0.05, 0.03, Math.hypot(p[0] * 1.2, p[1] - 0.287, (p[2] - 0.235) * 0.8));
+  const ears = smooth(0.328, 0.345, p[1]) * smooth(0.16, 0.18, p[2]);
+  const feet = smooth(0.09, 0.045, p[1]);
+  const tail = smooth(-0.22, -0.3, p[2]) * smooth(0.15, 0.17, p[1]);
+  return Math.max(mask, ears, feet, tail);
 }
 
 const COATS = {
   ginger: (p, n) => {
-    const over = lerp3(C('#e2903e'), C('#a8521c'), stripes(p));
-    return belly(p, n, over, C('#f4d2a4')).map((v) => v * hairs(p));
+    const over = lerp3(C('#e8953e'), C('#b05a1e'), stripes(p));
+    return lerp3(over, C('#f6dcb4'), pale(p, n)).map((v) => v * hairs(p) * shade(p));
   },
-  black: (p) => C('#151215').map((v) => v * (0.85 + 0.3 * noise(p[0] * 40, p[1] * 40, p[2] * 40)) * hairs(p, 0.25)),
-  grey: (p, n) => belly(p, n, C('#7d828c'), C('#a7abb2')).map((v) => v * (0.9 + 0.2 * fbm(p[0] * 20, p[1] * 20, p[2] * 20, 2)) * hairs(p)),
+  black: (p, n) => C('#17141a').map((v) => v * (1 + 0.25 * pale(p, n)) * hairs(p, 0.2) * shade(p, 0.2)),
+  grey: (p, n) => lerp3(C('#7b818c'), C('#a3a8b0'), pale(p, n) * 0.8).map((v) => v * hairs(p) * shade(p, 0.08)),
   calico: (p, n) => {
+    const white = C('#f4eee4');
     const a = fbm(p[0] * 9 + 3, p[1] * 9, p[2] * 9, 3), b = fbm(p[0] * 8, p[1] * 8 + 7, p[2] * 8, 3);
-    const white = C('#f2ece2');
-    let c = a > 0.56 ? C('#d8822e') : b > 0.6 ? C('#2a2220') : white;
-    // White underneath and on the paws, whatever the patches.
-    if (n[1] < -0.35 || p[1] < 0.06 || (p[2] > 0.25 && p[1] < 0.3)) c = white;
-    return c.map((v) => v * hairs(p));
+    let c = a > 0.52 ? C('#dc8a34') : b > 0.55 ? C('#2c2420') : white;
+    // White underneath, on the legs, the muzzle and the chest; patches over the back, the crown and the tail.
+    const w = Math.max(pale(p, n), smooth(0.13, 0.1, p[1]) * (isTail(p) ? 0 : 1), smooth(0.3, 0.29, p[1]) * smooth(0.19, 0.21, p[2]));
+    c = lerp3(c, white, w * 1.4);
+    return c.map((v) => v * hairs(p) * shade(p, 0.06));
   },
   siamese: (p, n) => {
-    const body = belly(p, n, C('#e8d8bc'), C('#f4ead8'));
-    return lerp3(body, C('#4a3426'), points(p)).map((v) => v * hairs(p, 0.12));
+    const body = lerp3(C('#eadcc2'), C('#f6eedc'), pale(p, n));
+    return lerp3(body, C('#4a3426'), points(p)).map((v) => v * hairs(p, 0.08) * shade(p, 0.06));
   },
   tom: (p, n) => {
-    const over = lerp3(C('#8a7660'), C('#3e3428'), stripes(p, 0.05));
-    const c = belly(p, n, over, C('#ece4d6'), -0.1);
-    // A white bib.
-    const bib = smooth(0.06, 0.02, Math.hypot(p[0] * 1.4, p[1] - 0.2, p[2] - 0.15) - 0.04);
-    return lerp3(c, C('#f0ebe2'), bib).map((v) => v * hairs(p, 0.22));
+    const over = lerp3(C('#8c7862'), C('#3c3228'), stripes(p, 0.046));
+    let c = lerp3(over, C('#ece4d6'), pale(p, n) * 0.85);
+    // A white bib and white socks.
+    const bib = smooth(0.05, 0.02, Math.hypot(p[0] * 1.3, p[1] - 0.2, (p[2] - 0.14) * 1.4) - 0.03);
+    const socks = smooth(0.035, 0.02, p[1]);
+    c = lerp3(c, C('#f2ede4'), Math.max(bib, socks));
+    return c.map((v) => v * hairs(p, 0.14) * shade(p));
   },
 };
 
@@ -88,275 +174,379 @@ const EYES = { ginger: '#c8e05a', black: '#f2c43a', grey: '#e8a63a', calico: '#7
 
 const side = (s) => (s > 0 ? 'L' : 'R');
 
+/** An eye's centre, the way it looks (`d`), and the turn that stands a shape along it. */
+function eyeFrame(m) {
+  const c = at(EYE, m), dir = [m * EYE_DIR[0], EYE_DIR[1], EYE_DIR[2]];
+  const l = Math.hypot(...dir), d = dir.map((v) => v / l);
+  return { c, d, rot: [-Math.asin(d[1]), Math.atan2(d[0], d[2]), m * 0.3] };
+}
+
+/** The eye's radii: across, up, and front to back. */
+const EYE_R = [0.0124, 0.0096, 0.0096];
+
+/** p in an eye's own frame (`R` its turn, `c` its centre): x across, y up, z out the front. */
+function toEye(p, c, R) {
+  const v = [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
+  return [
+    R[0][0] * v[0] + R[1][0] * v[1] + R[2][0] * v[2],
+    R[0][1] * v[0] + R[1][1] * v[1] + R[2][1] * v[2],
+    R[0][2] * v[0] + R[1][2] * v[1] + R[2][2] * v[2],
+  ];
+}
+
+/** An eye's colour: the iris bright in the middle and dark at its rim, and a slit of a pupil down the front. */
+function eyeColor(hex, m) {
+  const { c, rot } = eyeFrame(m);
+  const R = rotation(rot);
+  const iris = C(hex), deep = iris.map((v) => v * 0.3), bright = iris.map((v) => Math.min(1, v * 1.6 + 0.05)), black = C('#030202');
+  return (p) => {
+    const [x, y, z] = toEye(p, c, R);
+    const rim = Math.hypot(x / EYE_R[0], y / EYE_R[1]);
+    let col = lerp3(bright, iris, smooth(0.1, 0.6, rim));
+    col = lerp3(col, deep, smooth(0.72, 0.95, rim));
+    const half = 0.0021 * Math.sqrt(Math.max(0, 1 - (y / 0.0086) ** 2));
+    const slit = z > 0 ? smooth(half + 0.0007, half - 0.0005, Math.abs(x)) : 0;
+    return lerp3(col, black, slit);
+  };
+}
+
+/** Along a direction from a to b: the Euler x-turn that stands a shape's y axis along it. */
+const pitchAlong = (a, b) => Math.atan2(a[2] - b[2], a[1] - b[1]);
+
+// ——————————————————————————————————————— the sculpt
+
 /** The cat, sculpted in `coat`. */
 function catDef(coat) {
   const fur = COATS[coat];
-  const pink = coat === 'black' ? '#3a2a2c' : '#d9928e';
+  const pink = coat === 'black' ? '#3a2a2c' : '#d68e8a';
+  const F = { color: fur, mat: 'fur' };
   return {
     name: `cat-${coat}`,
     scale: SCALE * (coat === 'tom' ? 1.35 : coat === 'calico' || coat === 'siamese' ? 0.95 : 1),
-    cell: 0.0042,
-    cells: { eyes: 0.0018, pupils: 0.0011, ears: 0.0024, nose: 0.0016 },
+    cell: 0.0035,
+    cells: { head: 0.0017, eyes: 0.0006, ears: 0.0012, nose: 0.001 },
     budget: 40000,
-    bones: [
-      ['root', null, [0, 0, 0]],
-      ['body', 'root', [0, 0.2, -0.1]],
-      ['chest', 'body', [0, 0.21, 0.06]],
-      ['neck', 'chest', [0, 0.25, 0.13]],
-      ['head', 'neck', [0, 0.3, 0.19]],
-      ['jaw', 'head', [0, 0.285, 0.235]],
-      ['earL', 'head', [0.04, 0.35, 0.2]],
-      ['earR', 'head', [-0.04, 0.35, 0.2]],
-      ['fl1L', 'chest', [0.05, 0.19, 0.11]],
-      ['fl2L', 'fl1L', [0.05, 0.095, 0.12]],
-      ['fl1R', 'chest', [-0.05, 0.19, 0.11]],
-      ['fl2R', 'fl1R', [-0.05, 0.095, 0.12]],
-      ['hl1L', 'body', [0.055, 0.19, -0.13]],
-      ['hl2L', 'hl1L', [0.06, 0.105, -0.08]],
-      ['hl3L', 'hl2L', [0.06, 0.055, -0.155]],
-      ['hl1R', 'body', [-0.055, 0.19, -0.13]],
-      ['hl2R', 'hl1R', [-0.06, 0.105, -0.08]],
-      ['hl3R', 'hl2R', [-0.06, 0.055, -0.155]],
-      ['tail1', 'body', [0, 0.21, -0.18]],
-      ['tail2', 'tail1', [0, 0.245, -0.235]],
-      ['tail3', 'tail2', [0, 0.3, -0.27]],
-      ['tail4', 'tail3', [0, 0.36, -0.285]],
-      ['tail5', 'tail4', [0, 0.41, -0.27]],
-    ],
+    blend: 0.28,
+    bones: BONES,
     materials: {
-      fur: { roughness: 0.85, sheen: 1, sheenColor: coat === 'black' ? '#6a6070' : '#fff0e0', sheenRoughness: 0.5 },
+      fur: { roughness: 0.82, sheen: 1, sheenColor: coat === 'black' ? '#7a7084' : '#fff2e2', sheenRoughness: 0.45 },
       skin: { roughness: 0.5, clearcoat: 0.2 },
       nose: { roughness: 0.35, clearcoat: 0.8, clearcoatRoughness: 0.2 },
-      eye: { roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03, emissive: EYES[coat], emissiveIntensity: 0.55 },
-      whisker: { roughness: 0.4, clearcoat: 0.5 },
-      pupil: { roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02 },
+      eye: { roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.02 },
     },
     sculpt(s) {
-      // Fur all over: the surface raised in soft locks lying back along the body.
-      const F = { color: fur, mat: 'fur', locks: [0.0105, 0.0014, 2, 2.6] };
-      const FL = { ...F, locks: [0.008, 0.0012, 1, 2.2] };
-      const FH = { ...F, locks: [0.0075, 0.0011, 2, 2.0] };
-
-      // The body: a deep chest, a tucked waist, round haunches, a dip behind the shoulders.
-      s.ellipsoid([0, 0.207, -0.035], [0.066, 0.072, 0.15], { ...F, bone: 'body', k: 0.035 });
-      s.ellipsoid([0, 0.205, 0.07], [0.064, 0.086, 0.085], { ...F, bone: 'chest', k: 0.05 });
-      s.ellipsoid([0, 0.162, 0.015], [0.052, 0.04, 0.1], { ...F, bone: 'body', k: 0.05 });
+      // The trunk: a deep ribcage, the loin behind it, a little belly hanging, round hindquarters.
+      s.ellipsoid([0, 0.19, 0.045], [0.056, 0.068, 0.098], { ...F, bone: 'chest', k: 0.04 });
+      s.ellipsoid([0, 0.199, -0.058], [0.049, 0.053, 0.085], { ...F, bone: 'body', k: 0.045 });
+      s.ellipsoid([0, 0.163, -0.04], [0.043, 0.035, 0.07], { ...F, bone: 'body', k: 0.04 });
+      s.ellipsoid([0, 0.198, -0.122], [0.053, 0.055, 0.06], { ...F, bone: 'body', k: 0.04 });
+      // The chest in front, between the forelegs.
+      s.ellipsoid([0, 0.18, 0.12], [0.037, 0.05, 0.032], { ...F, bone: 'chest', k: 0.04 });
       s.mirror((m) => {
-        // Shoulder blades, and the haunches.
-        s.ellipsoid([m * 0.04, 0.245, 0.085], [0.03, 0.04, 0.05], { ...F, bone: 'chest', k: 0.035, rot: [0.3, 0, 0] });
-        s.ellipsoid([m * 0.043, 0.205, -0.125], [0.04, 0.066, 0.068], { ...F, bone: `hl1${side(m)}`, k: 0.04 });
+        // The shoulder blades, up either side of the withers.
+        s.ellipsoid([m * 0.035, 0.222, 0.086], [0.021, 0.04, 0.033], { ...F, bone: 'chest', k: 0.035, rot: [0.4, 0, 0] });
       });
-      // A ruff of fur down the front of the chest.
-      s.ellipsoid([0, 0.19, 0.135], [0.045, 0.06, 0.03], { ...F, bone: 'chest', k: 0.04, rot: [-0.4, 0, 0] });
-      // The neck, up and forward.
-      s.limb([0, 0.235, 0.11], [0, 0.29, 0.18], 0.05, 0.043, { ...F, bone: 'neck', k: 0.04 });
+      // The neck, up and forward from between the shoulders, and the scruff over it.
+      s.limb([0, 0.222, 0.112], [0, 0.274, 0.17], 0.037, 0.031, { ...F, bone: 'neck', k: 0.035 });
+      s.ellipsoid([0, 0.262, 0.128], [0.028, 0.026, 0.042], { ...F, bone: 'neck', k: 0.035, rot: [-0.7, 0, 0] });
 
-      // The head: broad across the cheeks, a flattish brow, a short muzzle.
-      s.ellipsoid([0, 0.314, 0.204], [0.052, 0.05, 0.05], { ...FH, bone: 'head', k: 0.03 });
-      s.mirror((m) => {
-        // Full cheeks, swept back into a ruff.
-        s.ellipsoid([m * 0.029, 0.291, 0.222], [0.029, 0.026, 0.03], { ...FH, bone: 'head', k: 0.025, rot: [0, m * 0.35, 0] });
-        s.ellipsoid([m * 0.042, 0.288, 0.2], [0.018, 0.026, 0.026], { ...FH, bone: 'head', k: 0.02 });
-        // The whisker pads, either side of the nose.
-        s.ellipsoid([m * 0.0125, 0.285, 0.258], [0.0145, 0.0125, 0.012], { ...FH, bone: 'head', k: 0.008 });
+      // The head, on a finer grid than the body so the face comes out clean: a round crown,
+      // cheekbones, a ruff at the jowls, a short muzzle, eyes set in sockets.
+      s.part('head', () => {
+        // The top of the neck, so the head grows out of it.
+        s.limb([0, 0.255, 0.148], [0, 0.276, 0.172], 0.03, 0.03, { ...F, bone: 'neck', k: 0.02 });
+        s.ellipsoid([0, 0.302, 0.192], [0.042, 0.037, 0.041], { ...F, bone: 'head', k: 0.02 });
+        s.ellipsoid([0, 0.303, 0.215], [0.03, 0.026, 0.026], { ...F, bone: 'head', k: 0.018 });
+        s.mirror((m) => {
+          s.ellipsoid([m * 0.025, 0.289, 0.211], [0.0205, 0.0185, 0.024], { ...F, bone: 'head', k: 0.016, rot: [0, m * 0.35, 0] });
+          s.ellipsoid([m * 0.033, 0.285, 0.192], [0.0135, 0.017, 0.02], { ...F, bone: 'head', k: 0.018 });
+          // The whisker pads, either side of the nose.
+          s.ellipsoid([m * 0.0102, 0.2775, 0.2402], [0.0112, 0.0092, 0.0092], { ...F, bone: 'head', k: 0.007 });
+          // The brow over each eye.
+          s.ellipsoid([m * 0.019, 0.3125, 0.2245], [0.016, 0.0072, 0.0102], { ...F, bone: 'head', k: 0.011, rot: [0, 0, m * -0.25] });
+        });
+        s.ellipsoid([0, 0.2835, 0.2355], [0.0148, 0.012, 0.013], { ...F, bone: 'head', k: 0.011 });
+        // The bridge of the nose.
+        s.limb([0, 0.303, 0.233], [0, 0.2905, 0.2465], 0.0088, 0.0072, { ...F, bone: 'head', k: 0.009 });
+        // The chin.
+        s.ellipsoid([0, 0.2665, 0.2305], [0.0105, 0.0068, 0.0102], { ...F, bone: 'jaw', k: 0.008 });
+        // The eye sockets.
+        s.mirror((m) => {
+          const { c, d, rot } = eyeFrame(m);
+          s.ellipsoid(c.map((v, i) => v + d[i] * 0.0042), [0.0138, 0.0098, 0.0095], { op: 'sub', k: 0.005, rot });
+        });
       });
-      s.ellipsoid([0, 0.295, 0.246], [0.024, 0.02, 0.02], { ...FH, bone: 'head', k: 0.015 });
-      // The bridge of the nose, and the nose leather: a small pink triangle.
-      s.limb([0, 0.318, 0.245], [0, 0.302, 0.262], 0.0105, 0.0085, { ...FH, bone: 'head', k: 0.012 });
       s.part('nose', () => {
-        s.ellipsoid([0, 0.299, 0.2675], [0.0078, 0.0052, 0.0045], { color: pink, mat: 'nose', bone: 'head', k: 0.003, rot: [0.5, 0, 0] });
-        s.mirror((m) => s.sphere([m * 0.0035, 0.2975, 0.2715], 0.0018, { op: 'sub', k: 0.001 }));
+        s.ellipsoid([0, 0.2878, 0.2518], [0.0064, 0.0043, 0.0038], { color: pink, mat: 'nose', bone: 'head', k: 0.003, rot: [0.5, 0, 0] });
+        s.mirror((m) => s.sphere([m * 0.0031, 0.2862, 0.2552], 0.0016, { op: 'sub', k: 0.001 }));
       });
-      // The mouth: a little chin under the pads, and the line between.
-      s.ellipsoid([0, 0.273, 0.247], [0.0145, 0.0085, 0.0135], { ...FH, bone: 'jaw', k: 0.01 });
-      // The brow over each eye.
-      s.mirror((m) => s.ellipsoid([m * 0.022, 0.326, 0.24], [0.019, 0.0085, 0.012], { ...FH, bone: 'head', k: 0.014, rot: [0, 0, m * -0.25] }));
 
-      // Eyes: big and almond-shaped, set a little apart, rimmed dark; the iris glowing, a slit of a pupil.
+      // The eyes: big and almond-shaped, the iris glowing and darker at its rim, a slit of a pupil.
+      s.part('eyes', () => s.mirror((m) => {
+        const { c, rot } = eyeFrame(m);
+        const bone = `eye${side(m)}`;
+        s.ellipsoid(c, EYE_R, { color: eyeColor(EYES[coat], m), mat: 'eye', bone, k: 0, rot });
+      }));
+      // A dark rim round each eye, as a cat has.
       s.mirror((m) => {
-        const c = [m * 0.0235, 0.3105, 0.2445], dir = [m * 0.36, 0.06, 0.93];
-        const l = Math.hypot(...dir), d = dir.map((v) => v / l);
-        const at = (t) => c.map((v, i) => v + d[i] * t);
-        const rot = [-Math.asin(d[1]), Math.atan2(d[0], d[2]), m * 0.32];
-        s.ellipsoid(at(0.004), [0.0145, 0.0105, 0.01], { op: 'sub', k: 0.004, rot });
-        s.part('eyes', () => s.ellipsoid(c, [0.0135, 0.0105, 0.0105], { color: EYES[coat], mat: 'eye', bone: 'head', k: 0, rot }));
-        s.part('pupils', () => s.ellipsoid(at(0.0098), [0.0019, 0.0078, 0.0016], { color: '#050404', mat: 'pupil', bone: 'head', k: 0, rot }));
-      });
-
-      // Ears: tall, wide at the base, pointed, cupped forward, pink inside with tufts of fur.
-      s.part('ears', () => s.mirror((m) => {
-        const b = `ear${side(m)}`;
-        const rot = [-0.12, m * 0.28, m * -0.32];
+        const { c, rot } = eyeFrame(m);
         const R = rotation(rot);
-        const tip = [m * 0.047, 0.396, 0.196];
-        s.cone(tip, 0.031, 0.062, { ...FH, bone: b, k: 0.005, rot });
+        s.paint((p) => {
+          const q = toEye(p, c, R);
+          return Math.abs(Math.hypot(q[0] / EYE_R[0], q[1] / EYE_R[1], q[2] / EYE_R[2]) - 1.14) * 0.01 - 0.0009;
+        }, coat === 'black' ? '#0c0a0c' : '#3a2418', 0.0008);
+      });
+
+      // The ears: tall, wide at the base, pointed, cupped forward and pink inside.
+      s.part('ears', () => s.mirror((m) => {
+        const bone = `ear${side(m)}`;
+        const rot = [-0.12, m * 0.28, m * -0.3];
+        const R = rotation(rot);
+        const tip = [m * 0.041, 0.371, 0.188];
+        s.cone(tip, 0.026, 0.05, { ...F, bone, k: 0.005, rot });
         const f = [R[0][2], R[1][2], R[2][2]];
-        const cup = [tip[0] + f[0] * 0.012, tip[1] - 0.036 + f[1] * 0.012, tip[2] + f[2] * 0.012];
-        s.ellipsoid(cup, [0.021, 0.034, 0.0085], { op: 'sub', k: 0.005, rot });
-        s.paint((p) => Math.hypot(p[0] - cup[0], (p[1] - cup[1]) * 0.55, p[2] - cup[2]) - 0.021, pink, 0.005);
-        for (let k = 0; k < 3; k++) {
-          const a = [cup[0] - m * 0.004 * k, cup[1] - 0.012 + k * 0.006, cup[2] - 0.002];
-          s.flake(a, [a[0] - m * 0.006, a[1] + 0.014, a[2] + 0.008], [0, 0, 1], 0.0022, 0.0006, 0.45, { color: '#f2eae0', mat: 'fur', bone: b, k: 0.002 });
-        }
+        const cup = [tip[0] + f[0] * 0.0115, tip[1] - 0.031 + f[1] * 0.0115, tip[2] + f[2] * 0.0115];
+        s.ellipsoid(cup, [0.0175, 0.03, 0.0075], { op: 'sub', k: 0.004, rot });
+        s.paint((p) => Math.hypot(p[0] - cup[0], (p[1] - cup[1]) * 0.6, p[2] - cup[2]) - 0.0185, pink, 0.004);
       }));
 
-      // Front legs: muscular at the top, slim below, a neat round paw with toes.
+      // The forelegs: the upper arm back from the shoulder to the elbow, the forearm down to the wrist, a neat round paw.
       s.mirror((m) => {
         const b = side(m);
-        s.limb([m * 0.047, 0.205, 0.098], [m * 0.046, 0.1, 0.118], 0.03, 0.019, { ...FL, bone: `fl1${b}`, k: 0.03 });
-        s.limb([m * 0.046, 0.1, 0.118], [m * 0.044, 0.026, 0.126], 0.0175, 0.0145, { ...FL, bone: `fl2${b}`, k: 0.012 });
-        s.ellipsoid([m * 0.044, 0.0135, 0.137], [0.0185, 0.0125, 0.022], { ...FL, bone: `fl2${b}`, k: 0.01 });
-        for (const t of [-1.5, -0.5, 0.5, 1.5]) s.sphere([m * 0.044 + t * 0.0082, 0.0095, 0.153 - Math.abs(t) * 0.0035], 0.0072, { ...FL, bone: `fl2${b}`, k: 0.004 });
+        const sh = at(J.shoulder, m), el = at(J.elbow, m), wr = at(J.wrist, m);
+        s.limb(sh, el, 0.024, 0.016, { ...F, bone: `fl1${b}`, k: 0.025 });
+        s.ellipsoid([m * 0.047, 0.163, 0.094], [0.023, 0.043, 0.026], { ...F, bone: `fl1${b}`, k: 0.03, rot: [pitchAlong(sh, el), 0, 0] });
+        s.sphere([m * 0.049, 0.12, 0.072], 0.0125, { ...F, bone: `fl2${b}`, k: 0.01 });
+        s.limb(el, wr, 0.0145, 0.0112, { ...F, bone: `fl2${b}`, k: 0.012 });
+        s.ellipsoid([m * 0.048, 0.093, 0.087], [0.0145, 0.028, 0.0145], { ...F, bone: `fl2${b}`, k: 0.012, rot: [pitchAlong(el, wr), 0, 0] });
+        s.limb(wr, [m * 0.047, 0.014, 0.106], 0.0112, 0.0118, { ...F, bone: `fl3${b}`, k: 0.008 });
+        s.ellipsoid([m * 0.047, 0.0112, 0.113], [0.0148, 0.0102, 0.0185], { ...F, bone: `fl3${b}`, k: 0.01 });
+        for (const t of [-1.5, -0.5, 0.5, 1.5]) s.sphere([m * 0.047 + t * 0.0071, 0.0076, 0.1255 - Math.abs(t) * 0.003], 0.0055, { ...F, bone: `fl3${b}`, k: 0.004 });
       });
-      // Hind legs: a big thigh, the long shin back to the hock, the foot down to the paw.
+
+      // The hind legs: a big thigh forward to the knee, the shin back to the hock, the foot down to a paw.
       s.mirror((m) => {
         const b = side(m);
-        s.limb([m * 0.05, 0.185, -0.12], [m * 0.056, 0.105, -0.078], 0.037, 0.023, { ...FL, bone: `hl1${b}`, k: 0.03 });
-        s.limb([m * 0.056, 0.105, -0.078], [m * 0.057, 0.056, -0.155], 0.02, 0.0145, { ...FL, bone: `hl2${b}`, k: 0.012 });
-        s.limb([m * 0.057, 0.056, -0.155], [m * 0.054, 0.016, -0.124], 0.0145, 0.0135, { ...FL, bone: `hl3${b}`, k: 0.01 });
-        s.ellipsoid([m * 0.054, 0.0125, -0.11], [0.017, 0.0115, 0.022], { ...FL, bone: `hl3${b}`, k: 0.01 });
-        for (const t of [-1.5, -0.5, 0.5, 1.5]) s.sphere([m * 0.054 + t * 0.0076, 0.009, -0.095 - Math.abs(t) * 0.003], 0.0066, { ...FL, bone: `hl3${b}`, k: 0.004 });
+        const hp = at(J.hip, m), kn = at(J.knee, m), hk = at(J.hock, m), hl = at(J.heel, m);
+        s.limb(hp, kn, 0.03, 0.019, { ...F, bone: `hl1${b}`, k: 0.03 });
+        s.ellipsoid([m * 0.043, 0.158, -0.1], [0.031, 0.052, 0.045], { ...F, bone: `hl1${b}`, k: 0.035, rot: [pitchAlong(hp, kn), 0, 0] });
+        s.limb(kn, hk, 0.016, 0.0102, { ...F, bone: `hl2${b}`, k: 0.014 });
+        s.ellipsoid([m * 0.055, 0.094, -0.097], [0.0135, 0.026, 0.0135], { ...F, bone: `hl2${b}`, k: 0.014, rot: [pitchAlong(kn, hk), 0, 0] });
+        s.sphere([m * 0.055, 0.056, -0.154], 0.0088, { ...F, bone: `hl2${b}`, k: 0.008 });
+        s.limb(hk, hl, 0.0102, 0.0104, { ...F, bone: `hl3${b}`, k: 0.008 });
+        s.ellipsoid([m * 0.053, 0.0105, -0.112], [0.0135, 0.0095, 0.0175], { ...F, bone: `hl4${b}`, k: 0.01 });
+        for (const t of [-1.5, -0.5, 0.5, 1.5]) s.sphere([m * 0.053 + t * 0.0066, 0.0071, -0.1 - Math.abs(t) * 0.0028], 0.0051, { ...F, bone: `hl4${b}`, k: 0.004 });
       });
 
-      // The tail: up from the rump, thick with fur, a crook at the tip.
-      s.chain(
-        [[0, 0.21, -0.17], [0, 0.245, -0.235], [0, 0.3, -0.27], [0, 0.36, -0.285], [0, 0.41, -0.27], [0, 0.436, -0.232]],
-        [0.021, 0.02, 0.019, 0.018, 0.017, 0.013],
-        { ...F, locks: [0.009, 0.0022, 1, 2.6], bones: ['tail1', 'tail2', 'tail3', 'tail4', 'tail5'], k: 0.012 },
-      );
-
-      // Tufts: a ruff at the cheeks, fluff at the chest.
-      s.mirror((m) => s.tufts({
-        count: 9, center: [m * 0.05, 0.285, 0.205], spread: 0.06, seed: m > 0 ? 3 : 7, length: 0.016, r: 0.0042, flat: 0.5, mat: 'fur',
-        color: (t, p) => fur(p, [m, 0, 0]), aim: (p, n) => [n[0] * 0.8 + m * 0.3, n[1] * 0.4 - 0.5, n[2] * 0.4 - 0.6],
-        keep: (p) => Math.abs(p[0]) > 0.035 && p[1] < 0.305,
-      }));
-      s.tufts({
-        count: 10, center: [0, 0.19, 0.16], spread: 0.08, seed: 11, length: 0.018, r: 0.005, flat: 0.5, mat: 'fur',
-        color: (t, p) => fur(p, [0, -0.6, 0.8]), aim: (p, n) => [n[0], n[1] - 0.8, n[2] * 0.6],
-        keep: (p, n) => n[2] > 0.3 && p[1] < 0.24,
-      });
-      s.grown();
+      // The tail: slim, and as long as the body.
+      s.chain(TAIL, TAIL_R, { ...F, bones: ['tail1', 'tail2', 'tail3', 'tail4', 'tail5'], k: 0.012 });
 
       if (coat === 'tom') {
-        // An old fighter: a nick out of one ear.
-        s.sphere([0.064, 0.378, 0.19], 0.011, { op: 'sub', k: 0.002 });
+        // An old fighter: a nick out of one ear, and a heavier jowl.
+        s.sphere([0.06, 0.358, 0.19], 0.009, { op: 'sub', k: 0.002 });
+        s.mirror((m) => s.ellipsoid([m * 0.04, 0.272, 0.2], [0.018, 0.02, 0.022], { ...F, bone: 'head', k: 0.02 }));
       }
     },
 
-    /**
-     * clip: 'sit', 'sleep' (curled), 'walk', 'run' (a gallop), 'stalk' (low
-     * and slow), 'crouch' (low, still, all eyes), 'alert' (up tall),
-     * 'swat' (a paw up and down, over 0.45 s), 'play' (batting, both
-     * paws), 'look' (standing, looking about). `pace` is how fast it really
-     * goes, tiles a second.
-     */
-    animate(k, { clip = 'sit', t = 0, time = 0, seed = 0, speed = 1, pace = 0 }) {
-      const T = time + seed;
-      const sway = (amp, f, ph = 0) => amp * Math.sin(T * f + ph);
-      const legs = (front, hind) => {
-        for (const [b, a] of front) k.turn(b, a, 0, 0);
-        for (const [b, a] of hind) k.turn(b, a, 0, 0);
-      };
-      // Always: breathing, and a tail that is never quite still.
-      k.scale('chest', 1, 1 + sway(0.02, 2.6), 1);
-      const tailWave = (amp, f) => { for (let i = 1; i <= 5; i++) k.turn(`tail${i}`, 0, sway(amp, f, -i * 0.7), 0); };
-
-      if (clip === 'sit') {
-        // Haunches down, chest up, front legs straight.
-        k.turn('body', -0.7, 0, 0);
-        k.move('root', 0, -0.062, -0.02);
-        k.turn('chest', 0.12, 0, 0);
-        k.turn('neck', 0.32, 0, 0);
-        k.turn('head', 0.18 + sway(0.05, 0.7), sway(0.3, 0.45), 0);
-        legs([['fl1L', 0.48], ['fl1R', 0.48]], [['hl1L', -0.35], ['hl1R', -0.35], ['hl2L', 0.55], ['hl2R', 0.55], ['hl3L', 0.35], ['hl3R', 0.35]]);
-        k.scale('fl1L', 1, 1.18, 1); k.scale('fl1R', 1, 1.18, 1);
-        k.turn('tail1', 1.0, 0.5, 0); k.turn('tail2', 0.5, 0.6, 0); k.turn('tail3', 0.2, 0.5, 0);
-        tailWave(0.08, 1.2);
-        const blink = Math.max(0, Math.sin(T * 0.9) * Math.sin(T * 3.1) - 0.85) * 4;
-        k.turn('earL', 0, blink * 0.3, -blink * 0.2);
-      } else if (clip === 'sleep') {
-        // Curled up: down on the floor, head on its paws, tail round.
-        k.move('root', 0, -0.13, 0);
-        k.turn('root', 0, 0, 0.25);
-        k.turn('neck', 0.5, 0.6, 0);
-        k.turn('head', 0.3 + sway(0.02, 1.2), 0.5, 0.3);
-        legs([['fl1L', -1.2], ['fl1R', -1.2], ['fl2L', 1.8], ['fl2R', 1.8]], [['hl1L', 0.9], ['hl1R', 0.9], ['hl2L', 0.5], ['hl2R', 0.5]]);
-        for (let i = 1; i <= 5; i++) k.turn(`tail${i}`, i === 1 ? 1.2 : 0.1, 0.55, 0);
-        k.scale('body', 1, 1 + sway(0.03, 1.4), 1);
-      } else if (clip === 'walk' || clip === 'stalk' || clip === 'look') {
-        const low = clip === 'stalk' ? 1 : 0;
-        const rate = clip === 'look' ? 0 : 9 * Math.max(0.5, Math.min(1.6, pace / 2.0));
-        const ph = T * rate;
-        const g = Math.sin(ph), g2 = Math.sin(ph + Math.PI);
-        k.move('root', 0, -0.05 * low + Math.abs(Math.sin(ph)) * 0.006, 0);
-        k.turn('body', 0.05 * low, sway(0.04, rate / 2), 0);
-        k.turn('neck', -0.1 * low + 0.1, 0, 0);
-        k.turn('head', 0.15 * low, clip === 'look' ? Math.sin(T * 1.7) * 0.7 : 0, 0);
-        const amp = clip === 'look' ? 0 : 0.42;
-        legs([['fl1L', g * amp - 0.3 * low], ['fl1R', g2 * amp - 0.3 * low], ['fl2L', Math.max(0, -g) * 0.6 + 0.5 * low], ['fl2R', Math.max(0, -g2) * 0.6 + 0.5 * low]],
-          [['hl1L', -g2 * amp + 0.3 * low], ['hl1R', -g * amp + 0.3 * low], ['hl2L', Math.max(0, g2) * 0.4 - 0.3 * low], ['hl2R', Math.max(0, g) * 0.4 - 0.3 * low]]);
-        k.turn('tail1', low ? 1.3 : 0.25, 0, 0);
-        k.turn('tail2', low ? 0.3 : 0.1, 0, 0);
-        tailWave(low ? 0.04 : 0.1, low ? 9 : 3);
-      } else if (clip === 'run') {
-        // A gallop: front pair and back pair together, the spine flexing.
-        const ph = T * 15;
-        const g = Math.sin(ph);
-        k.move('root', 0, Math.max(0, Math.sin(ph + 0.6)) * 0.03 - 0.01, 0);
-        k.turn('body', g * 0.12, 0, 0);
-        k.turn('chest', -g * 0.18, 0, 0);
-        k.turn('neck', 0.25 + g * 0.08, 0, 0);
-        k.turn('head', -0.1, 0, 0);
-        legs([['fl1L', -g * 0.85], ['fl1R', -g * 0.75], ['fl2L', Math.max(0, g) * 0.9], ['fl2R', Math.max(0, g) * 0.8]],
-          [['hl1L', g * 0.8], ['hl1R', g * 0.7], ['hl2L', -Math.max(0, -g) * 0.5], ['hl2R', -Math.max(0, -g) * 0.45]]);
-        k.turn('tail1', 1.35, 0, 0); k.turn('tail2', -0.3 + g * 0.2, 0, 0); k.turn('tail3', -0.4, 0, 0);
-      } else if (clip === 'crouch') {
-        // Low, eyes front, haunches up, wiggling to pounce; the tail-tip twitching.
-        const wiggle = Math.max(0, Math.sin(T * 0.8)) * sway(0.06, 16);
-        k.move('root', wiggle * 0.2, -0.07, 0);
-        k.turn('body', 0.15, wiggle, 0);
-        k.turn('chest', -0.25, 0, 0);
-        k.turn('neck', -0.15, 0, 0);
-        k.turn('head', 0.25, sway(0.08, 2.5), 0);
-        legs([['fl1L', -0.5], ['fl1R', -0.5], ['fl2L', 1.0], ['fl2R', 1.0]], [['hl1L', 0.6], ['hl1R', 0.6], ['hl2L', -0.6], ['hl2R', -0.6]]);
-        k.turn('tail1', 1.55, 0, 0); k.turn('tail2', -0.2, 0, 0);
-        k.turn('tail4', 0, sway(0.6, 11), 0); k.turn('tail5', 0, sway(0.9, 11, -0.6), 0);
-        k.turn('earL', 0.2, 0, 0); k.turn('earR', 0.2, 0, 0);
-      } else if (clip === 'alert') {
-        // Up tall, ears pricked, tail up and fluffed.
-        const up = smooth(0, 0.2, t);
-        k.move('root', 0, 0.02 * up, 0);
-        k.turn('neck', -0.25 * up, 0, 0);
-        k.turn('head', -0.1 * up, 0, 0);
-        k.turn('tail1', 0.2, 0, 0);
-        for (let i = 1; i <= 5; i++) k.scale(`tail${i}`, 1 + 0.5 * up, 1 + 0.5 * up, 1);
-        k.turn('earL', -0.3 * up, 0, 0); k.turn('earR', -0.3 * up, 0, 0);
-      } else if (clip === 'swat') {
-        // Up on its haunches a little, a front paw up, and down on the ball.
-        const up = smooth(0, 0.18, t), down = smooth(0.18, 0.3, t);
-        k.turn('body', -0.3 * up, 0, 0);
-        k.turn('neck', 0.25 * down, 0, 0);
-        k.turn('fl1R', -1.5 * up + 1.6 * down, 0, 0);
-        k.turn('fl2R', 0.9 * up - 0.8 * down, 0, 0);
-        k.turn('fl1L', 0.2, 0, 0);
-        k.turn('earL', -0.4, 0, 0); k.turn('earR', -0.4, 0, 0);
-        tailWave(0.3, 8);
-      } else if (clip === 'play') {
-        // Down on its front, batting at the strand with one paw and the other.
-        k.move('root', 0, -0.06, 0);
-        k.turn('body', 0.18, 0, 0);
-        k.turn('chest', -0.3, 0, 0);
-        k.turn('neck', -0.05, 0, 0);
-        k.turn('head', 0.45, sway(0.25, 3), 0);
-        const a = Math.max(0, Math.sin(T * 7)), b = Math.max(0, Math.sin(T * 7 + Math.PI));
-        legs([['fl1L', -0.6 - a * 0.9], ['fl1R', -0.6 - b * 0.9], ['fl2L', 0.9 - a * 0.5], ['fl2R', 0.9 - b * 0.5]], [['hl1L', 0.45], ['hl1R', 0.45], ['hl2L', -0.4], ['hl2R', -0.4]]);
-        k.turn('tail1', 1.3, 0, 0);
-        tailWave(0.35, 5);
-      }
-      void speed;
-    },
+    animate: pose,
   };
+}
+
+// ——————————————————————————————————————— the clips
+
+/**
+ * A foot's place in its stride, `u` 0–1: on the ground for the first `duty`
+ * of it, going from forward (`swing` 1) to back (−1); then lifted
+ * (`lift` 0–1–0) and brought forward again.
+ */
+function stride(u, duty) {
+  u = ((u % 1) + 1) % 1;
+  if (u < duty) return { swing: 1 - (2 * u) / duty, lift: 0 };
+  const t = (u - duty) / (1 - duty);
+  return { swing: -1 + 2 * t * t * (3 - 2 * t), lift: Math.sin(Math.PI * t) };
+}
+
+/** A foreleg (`s` 'L' or 'R') at shoulder angle a, the elbow and wrist flexed for a lifted foot. */
+function foreleg(k, s, a, lift, { bend = 0, flat = true } = {}) {
+  k.turn(`fl1${s}`, a - lift * 0.15 + bend * 0.5, 0, 0);
+  k.turn(`fl2${s}`, lift * 1.1 - bend, 0, 0);
+  // The paw kept flat on the floor while it stands, curled under while it's lifted.
+  k.turn(`fl3${s}`, (flat ? -a - bend * 0.5 + bend : 0) + lift * 0.9, 0, 0);
+}
+
+/** A hind leg at hip angle a: knee and hock flexed for a lifted foot. */
+function hindleg(k, s, a, lift, { bend = 0 } = {}) {
+  const knee = lift * 0.5 + bend, hock = -lift * 0.85 - bend * 1.1;
+  k.turn(`hl1${s}`, a - bend * 0.35, 0, 0);
+  k.turn(`hl2${s}`, knee, 0, 0);
+  k.turn(`hl3${s}`, hock, 0, 0);
+  k.turn(`hl4${s}`, -(a - bend * 0.35 + knee + hock) + lift * 0.5, 0, 0);
+}
+
+/** The tail: up from the rump by `lift`, then each bone bent by `curl` (one each), swung `aside`, and waving. */
+function tail(k, lift, curl, aside = [0, 0, 0, 0, 0], wave = null) {
+  k.turn('tail1', lift, aside[0], 0);
+  for (let i = 2; i <= 5; i++) k.turn(`tail${i}`, curl[i - 2], aside[i - 1], 0);
+  if (wave) for (let i = 1; i <= 5; i++) k.turn(`tail${i}`, 0, wave(i), 0);
+}
+
+/** Sitting, the tail along the floor and round its haunch toward its feet (its root turned level again first). */
+function sitTail(k, wave) {
+  k.turn('tail0', 0.68, 0, 0);
+  tail(k, -0.35, [0, -0.1, -0.2, 0], [0.8, 1.2, 0.9, 0.35, 0.1], wave);
+}
+
+/** Both eyes shut by `shut` (0 open, 1 closed). */
+function lids(k, shut) {
+  const y = Math.max(0.06, 1 - shut);
+  k.scale('eyeL', 1, y, 1);
+  k.scale('eyeR', 1, y, 1);
+}
+
+/** Sitting up: on its haunches, hind feet flat beside it, forelegs straight, tail round its feet. */
+function sitting(k) {
+  k.move('root', 0, -0.125, 0);
+  k.turn('body', -0.68, 0, 0);
+  for (const s of ['L', 'R']) {
+    k.turn(`fl1${s}`, 0.406, 0, 0); k.turn(`fl2${s}`, 0.454, 0, 0); k.turn(`fl3${s}`, -0.18, 0, 0);
+    k.turn(`hl1${s}`, 0.148, 0, 0); k.turn(`hl2${s}`, 1.055, 0, 0); k.turn(`hl3${s}`, -1.526, 0, 0); k.turn(`hl4${s}`, 1.003, 0, 0);
+  }
+}
+
+/**
+ * clip: 'sit', 'sleep' (a loaf, eyes shut), 'walk', 'run' (a gallop),
+ * 'stalk' (low and slow), 'crouch' (low, still, all eyes), 'alert' (up
+ * tall, tail up), 'swat' (a paw up and down, over 0.45 s), 'play' (batting,
+ * both paws), 'look' (standing, looking about), 'idle' (standing). `pace`
+ * is how fast it really goes, tiles a second.
+ */
+function pose(k, { clip = 'sit', t = 0, time = 0, seed = 0, pace = 0 }) {
+  const T = time + seed;
+  const sway = (amp, f, ph = 0) => amp * Math.sin(T * f + ph);
+  // Always: breathing, and blinking now and then.
+  k.scale('chest', 1, 1 + sway(0.01, 2.6), 1 + sway(0.01, 2.6));
+  const blink = Math.max(0, Math.sin(T * 0.83) * Math.sin(T * 2.9 + 1) - 0.9) * 10;
+
+  if (clip === 'sit') {
+    sitting(k);
+    k.turn('neck', 0.3, 0, 0);
+    k.turn('head', 0.42 + sway(0.05, 0.7), sway(0.35, 0.45), sway(0.06, 0.3));
+    sitTail(k, (i) => (i >= 4 ? sway(0.12, 1.3, -i * 0.7) : 0));
+    k.turn('earL', 0, sway(0.15, 0.4), 0); k.turn('earR', 0, sway(0.15, 0.4, 1), 0);
+    lids(k, blink);
+  } else if (clip === 'sleep') {
+    // A loaf: down on its belly, paws tucked under, head down on its chest, tail round, eyes shut.
+    const breathe = sway(0.012, 1.4);
+    k.move('root', 0, -0.117, 0);
+    k.scale('body', 1, 1 + breathe, 1);
+    for (const s of ['L', 'R']) {
+      k.turn(`fl1${s}`, 1.45, 0, 0); k.turn(`fl2${s}`, -2.55, 0, 0); k.turn(`fl3${s}`, 1.0, 0, 0);
+      k.turn(`hl1${s}`, -1.05, 0, 0); k.turn(`hl2${s}`, 1.9, 0, 0); k.turn(`hl3${s}`, -1.35, 0, 0); k.turn(`hl4${s}`, 0.5, 0, 0);
+    }
+    k.turn('neck', 0.38, 0.25, 0);
+    k.turn('head', 0.22 + sway(0.015, 1.4), 0.2, 0.12);
+    tail(k, -0.9, [0, -0.3, -0.3, -0.2], [0.5, 0.9, 0.8, 0.5, 0.3], (i) => (i === 5 ? sway(0.1, 0.9) : 0));
+    k.turn('earL', 0.15, 0, -0.1); k.turn('earR', 0.15, 0, 0.1);
+    lids(k, 1);
+  } else if (clip === 'walk' || clip === 'stalk' || clip === 'look' || clip === 'idle') {
+    const low = clip === 'stalk' ? 1 : 0;
+    const still = clip === 'look' || clip === 'idle';
+    // A walk: each foot in turn, hind before fore on each side (left hind, left fore, right hind, right fore).
+    const rate = still ? 0 : (low ? 0.75 : 1) * Math.max(0.6, Math.min(2.4, pace / 0.8));
+    const ph = T * rate;
+    const A = still ? 0 : low ? 0.26 : 0.34;
+    const duty = 0.62;
+    const lh = stride(ph, duty), lf = stride(ph + 0.25, duty), rh = stride(ph + 0.5, duty), rf = stride(ph + 0.75, duty);
+    k.move('root', 0, -0.005 - 0.058 * low + (still ? 0 : Math.abs(Math.sin(ph * Math.PI * 2)) * 0.003), 0);
+    k.turn('body', 0.06 * low, sway(still ? 0 : 0.03, rate * Math.PI), 0);
+    k.turn('chest', -0.02 * low, sway(still ? 0 : -0.04, rate * Math.PI), 0);
+    const bend = low ? 0.62 : 0;
+    foreleg(k, 'L', -A * lf.swing, lf.lift, { bend });
+    foreleg(k, 'R', -A * rf.swing, rf.lift, { bend });
+    hindleg(k, 'L', -A * 0.9 * lh.swing, lh.lift, { bend: bend * 0.9 });
+    hindleg(k, 'R', -A * 0.9 * rh.swing, rh.lift, { bend: bend * 0.9 });
+    if (low) {
+      // Stalking: head down level with the back, eyes on the prey, tail low with its tip flicking.
+      k.turn('neck', 0.55, 0, 0);
+      k.turn('head', -0.42, 0, 0);
+      tail(k, -0.08, [0.02, 0, 0.05, 0.1], [0, 0, 0, sway(0.4, 7), sway(0.6, 7, -0.8)]);
+    } else {
+      k.turn('neck', 0.2, 0, 0);
+      k.turn('head', 0.1 + (still ? 0 : sway(0.03, rate * Math.PI * 2)), clip === 'look' ? Math.sin(T * 1.3) * 0.75 : sway(0.08, 0.5), 0);
+      // The tail held up, curved over at the tip.
+      tail(k, 1.05, [0.25, 0.05, -0.3, -0.45], [0, 0, 0, 0, 0], (i) => sway(0.06 + i * 0.02, 2.2, -i * 0.6));
+    }
+    lids(k, blink);
+  } else if (clip === 'run') {
+    // A gallop: the hind feet one just after the other, then the fore, the back bending and stretching.
+    const rate = Math.max(2.2, Math.min(3.6, pace / 1.6));
+    const ph = T * rate;
+    const duty = 0.34;
+    const lh = stride(ph, duty), rh = stride(ph + 0.08, duty), lf = stride(ph + 0.5, duty), rf = stride(ph + 0.58, duty);
+    const flex = Math.sin((ph + 0.15) * Math.PI * 2);
+    k.move('root', 0, -0.012 + Math.max(0, Math.sin((ph + 0.3) * Math.PI * 2)) * 0.022, 0);
+    k.turn('body', flex * 0.13, 0, 0);
+    k.turn('chest', -flex * 0.2, 0, 0);
+    foreleg(k, 'L', -0.78 * lf.swing, lf.lift, {});
+    foreleg(k, 'R', -0.78 * rf.swing, rf.lift, {});
+    hindleg(k, 'L', -0.72 * lh.swing, lh.lift, {});
+    hindleg(k, 'R', -0.72 * rh.swing, rh.lift, {});
+    k.turn('neck', 0.3 - flex * 0.08, 0, 0);
+    k.turn('head', -0.18, 0, 0);
+    tail(k, 0.25 + flex * 0.15, [0.05, 0.05, 0.08, 0.1], [0, 0, 0, 0, 0], (i) => sway(0.04 * i, rate * Math.PI * 2, -i * 0.5));
+    k.turn('earL', 0.35, 0, -0.2); k.turn('earR', 0.35, 0, 0.2);
+  } else if (clip === 'crouch') {
+    // Low on its belly, forepaws ahead, haunches gathered, eyes front; now and then a wiggle, and the tail-tip twitching.
+    const wiggle = Math.max(0, Math.sin(T * 0.8) - 0.3) * sway(0.06, 16);
+    k.move('root', wiggle * 0.15, -0.1, 0);
+    k.turn('body', 0.02, wiggle * 0.8, 0);
+    for (const s of ['L', 'R']) {
+      // Elbows up and back, forepaws under the chin; thighs gathered under, hind feet flat.
+      k.turn(`fl1${s}`, 1.55, 0, 0); k.turn(`fl2${s}`, -2.05, 0, 0); k.turn(`fl3${s}`, 0.5, 0, 0);
+      k.turn(`hl1${s}`, -0.35, 0, 0); k.turn(`hl2${s}`, 0.85, 0, 0); k.turn(`hl3${s}`, -1.5, 0, 0); k.turn(`hl4${s}`, 1.0, 0, 0);
+    }
+    k.turn('neck', 0.42, 0, 0);
+    k.turn('head', -0.38, sway(0.06, 2.5), 0);
+    tail(k, -0.12, [0.02, 0, 0, 0.1], [0, 0, sway(0.1, 3), sway(0.5, 11), sway(0.8, 11, -0.6)]);
+    k.turn('earL', -0.25, 0, 0); k.turn('earR', -0.25, 0, 0);
+    lids(k, blink * 0.5);
+  } else if (clip === 'alert') {
+    // Up tall, ears pricked, staring, tail straight up.
+    const up = smooth(0, 0.2, t);
+    k.move('root', 0, 0.004 * up, 0);
+    k.turn('body', -0.04 * up, 0, 0);
+    for (const s of ['L', 'R']) foreleg(k, s, 0, 0);
+    for (const s of ['L', 'R']) hindleg(k, s, 0, 0);
+    k.turn('neck', -0.08 * up, 0, 0);
+    k.turn('head', 0.06 * up, 0, 0);
+    tail(k, 0.3 + 1.2 * up, [0.12, 0, -0.1, -0.35 * up], [0, 0, 0, 0, sway(0.15, 6)]);
+    k.turn('earL', -0.25 * up, 0, 0.1 * up); k.turn('earR', -0.25 * up, 0, -0.1 * up);
+  } else if (clip === 'swat') {
+    // Sitting up, a forepaw raised high, and down on the ball.
+    const up = smooth(0, 0.18, t), down = smooth(0.18, 0.3, t);
+    sitting(k);
+    k.turn('body', 0.12 * up, 0, 0);
+    k.turn('fl1R', -1.65 * up + 1.55 * down, 0, 0);
+    k.turn('fl2R', 0.6 * up - 0.55 * down, 0, 0);
+    k.turn('fl3R', 0.5 * up - 0.4 * down, 0, 0);
+    k.turn('neck', 0.25 + 0.15 * down, 0, 0);
+    k.turn('head', 0.35, 0, 0);
+    sitTail(k, (i) => (i >= 3 ? sway(0.15 * (i - 2), 9, -i * 0.6) : 0));
+    k.turn('earL', 0.3, 0, -0.25); k.turn('earR', 0.3, 0, 0.25);
+  } else if (clip === 'play') {
+    // Down on its front, rump up, batting at the strand with one paw and then the other.
+    const a = Math.max(0, Math.sin(T * 7)), b = Math.max(0, Math.sin(T * 7 + Math.PI));
+    k.move('root', 0, -0.04, 0);
+    k.turn('body', 0.26, 0, 0);
+    k.turn('chest', 0.06, 0, 0);
+    foreleg(k, 'L', -0.55 - a * 0.85, 0, { bend: 0.75 - a * 0.5 });
+    foreleg(k, 'R', -0.55 - b * 0.85, 0, { bend: 0.75 - b * 0.5 });
+    hindleg(k, 'L', -0.12, 0, { bend: 0.25 });
+    hindleg(k, 'R', -0.12, 0, { bend: 0.25 });
+    k.turn('neck', -0.25, 0, 0);
+    k.turn('head', 0.1, sway(0.25, 3), 0);
+    tail(k, 0.75, [0.1, 0, 0, 0], [0, 0, 0, 0, 0], (i) => sway(0.18 * i, 5, -i * 0.5));
+  }
 }
 
 /** Every coat's sculpt, by name (`cat-ginger`...), for the library to bake. */

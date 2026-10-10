@@ -1,4 +1,5 @@
 import mouseDef from './models/cast/mouse.js';
+import { ball, cushion, geometry, joined, leaf, moved, tube } from './shapes.js';
 import { isBaked, ready } from './models/library.js';
 import { createModel } from './models/model.js';
 
@@ -53,6 +54,18 @@ export function createCritters(GFX, house) {
     crumb: new GFX.MeshStandardMaterial({ name: 'crumb', color: new GFX.Color('#e6c070'), roughness: 0.9 }),
     hole: new GFX.MeshBasicMaterial({ name: 'mouse-hole', color: new GFX.Color('#0a0605') }),
   };
+  const legOf = (s) => tube([[0, 0, 0], [s * 0.05, 0.02, 0], [s * 0.1, -0.045, 0.01]], [0.009, 0.007, 0.004], { radial: 5 });
+  const bugParts = {
+    elytra: geometry(GFX, joined([-1, 1].map((s) => moved(cushion(0.075, 0.07, 0.17, { up: 0.6, round: 0.55, seg: [20, 10] }), [s * 0.039, 0.065, -0.03])))),
+    pronotum: geometry(GFX, moved(cushion(0.12, 0.06, 0.07, { up: 0.65, round: 0.7, seg: [18, 8] }), [0, 0.065, 0.07])),
+    head: geometry(GFX, moved(ball(0.035, 12), [0, 0.055, 0.115])),
+    legL: geometry(GFX, legOf(1)), legR: geometry(GFX, legOf(-1)),
+    feelers: geometry(GFX, joined([-1, 1].map((s) => tube([[s * 0.015, 0.065, 0.14], [s * 0.04, 0.09, 0.18], [s * 0.07, 0.1, 0.22]], 0.004, { radial: 4 })))),
+    thorax: geometry(GFX, ball(0.042, 14)),
+    abdomen: geometry(GFX, moved(cushion(0.075, 0.06, 0.11, { up: 0.9, round: 0.9, seg: [16, 10] }), [0, -0.005, -0.075], [0.15, 0, 0])),
+    eyes: geometry(GFX, joined([-1, 1].map((s) => moved(ball(0.025, 12), [s * 0.024, 0.012, 0.042])))),
+    wing: geometry(GFX, leaf(0.11, 0.05, { droop: 0.05, fold: 0, steps: 8 })),
+  };
 
   const build = {
     mouse() {
@@ -69,33 +82,28 @@ export function createCritters(GFX, house) {
       const g = new GFX.Group();
       const body = new GFX.Group();
       g.add(body);
-      const shell = new GFX.Mesh(new GFX.SphereGeometry(0.1, 16, 10), mats.shell);
-      shell.scale.set(0.8, 0.55, 1.15);
-      shell.position.y = 0.06;
-      const head = new GFX.Mesh(new GFX.SphereGeometry(0.045, 10, 8), mats.legs);
-      head.position.set(0, 0.045, 0.12);
-      body.add(shell, head);
+      // Two wing cases with a seam down the middle, the shield behind the head, the head; six jointed legs and two feelers.
+      const shell = new GFX.Mesh(bugParts.elytra, mats.shell);
+      const front = new GFX.Mesh(bugParts.pronotum, mats.shell);
+      const head = new GFX.Mesh(bugParts.head, mats.legs);
+      body.add(shell, front, head);
       const legs = [];
       for (const side of [-1, 1]) {
         for (const k of [-1, 0, 1]) {
-          const leg = new GFX.Mesh(new GFX.CylinderGeometry(0.008, 0.006, 0.12, 5), mats.legs);
-          leg.rotation.z = side * 1.1;
-          leg.position.set(side * 0.08, 0.035, k * 0.05);
+          const leg = new GFX.Group();
+          leg.position.set(side * 0.045, 0.045, k * 0.045 + 0.02);
+          leg.add(new GFX.Mesh(side > 0 ? bugParts.legL : bugParts.legR, mats.legs));
+          leg.rotation.y = k * 0.5 * side;
           body.add(leg);
           legs.push({ leg, side, k });
         }
       }
-      for (const side of [-1, 1]) {
-        const feeler = new GFX.Mesh(new GFX.CylinderGeometry(0.004, 0.003, 0.1, 4), mats.legs);
-        feeler.rotation.set(1.1, side * 0.4, 0);
-        feeler.position.set(side * 0.02, 0.07, 0.17);
-        body.add(feeler);
-      }
+      body.add(new GFX.Mesh(bugParts.feelers, mats.legs));
       g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
       return {
         group: g, body,
         animate(t, moving, speed) {
-          for (const { leg, side, k } of legs) leg.rotation.x = moving ? Math.sin(t * 22 * speed + k * 2 + side) * 0.5 : 0;
+          for (const { leg, side, k } of legs) leg.rotation.x = moving ? Math.sin(t * 22 * speed + k * 2 + side) * 0.45 : 0;
         },
       };
     },
@@ -103,22 +111,18 @@ export function createCritters(GFX, house) {
       const g = new GFX.Group();
       const body = new GFX.Group();
       g.add(body);
-      const thorax = new GFX.Mesh(new GFX.SphereGeometry(0.045, 10, 8), mats.fly);
-      const belly = new GFX.Mesh(new GFX.SphereGeometry(0.05, 10, 8), mats.fly);
-      belly.scale.set(0.8, 0.75, 1.2);
-      belly.position.z = -0.06;
-      const eyes = [-1, 1].map((s) => {
-        const e = new GFX.Mesh(new GFX.SphereGeometry(0.026, 8, 6), mats.eyes);
-        e.position.set(s * 0.025, 0.012, 0.045);
-        return e;
-      });
+      const thorax = new GFX.Mesh(bugParts.thorax, mats.fly);
+      const belly = new GFX.Mesh(bugParts.abdomen, mats.fly);
+      const eyes = new GFX.Mesh(bugParts.eyes, mats.eyes);
       const wings = [-1, 1].map((s) => {
-        const w = new GFX.Mesh(new GFX.PlaneGeometry(0.11, 0.05), mats.wing);
-        w.position.set(s * 0.055, 0.035, -0.02);
-        w.rotation.x = -Math.PI / 2;
+        const w = new GFX.Group();
+        w.position.set(s * 0.02, 0.04, -0.005);
+        const m = new GFX.Mesh(bugParts.wing, mats.wing);
+        m.rotation.set(-0.12, s * (Math.PI / 2 + 0.55), 0);
+        w.add(m);
         return w;
       });
-      body.add(thorax, belly, ...eyes, ...wings);
+      body.add(thorax, belly, eyes, ...wings);
       body.scale.setScalar(1.2);
       thorax.castShadow = belly.castShadow = true;
       return {

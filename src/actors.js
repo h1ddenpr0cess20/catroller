@@ -1,3 +1,4 @@
+import { coil, geometry, joined, lathe, moved, ring, roundedBox, tube } from './shapes.js';
 import { buildTube } from './yarn/model.js';
 import { YR } from './yarn/winding.js';
 import { TILE_METRES } from './yarn/ball.js';
@@ -56,68 +57,67 @@ export function createActors(GFX, house, world, { yarnMaterial } = {}) {
   const buttonMats = BUTTONS.map((c) => P({ name: 'button', color: new GFX.Color(c), roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2 }));
   const holeMat = M({ name: 'button-hole', color: new GFX.Color('#1a1412'), roughness: 1 });
 
-  // Mousetraps: a little board, a copper spring, a steel bar across, a bit of cheese on the plate.
+  // Mousetraps: a little board, a coiled spring, a wire bail on its hinge, a copper plate with a bit of cheese on it.
+  const trapParts = {
+    base: geometry(GFX, moved(roundedBox(0.34, 0.04, 0.6, 0.012, 2), [0, 0.02, 0])),
+    spring: geometry(GFX, joined([-1, 1].map((sd) => moved(coil(0.034, 0.007, 0.08, 4), [sd * 0.08, 0.075, 0.02])))),
+    plate: geometry(GFX, moved(roundedBox(0.09, 0.012, 0.12, 0.005, 1), [0, 0.046, 0.18])),
+    cheese: geometry(GFX, moved(roundedBox(0.07, 0.045, 0.055, 0.012, 2), [0, 0.075, 0.18], [0, 0.4, 0])),
+    staples: geometry(GFX, joined([-1, 1].map((sd) => tube([[sd * 0.05, 0.04, -0.2], [sd * 0.05, 0.055, -0.2], [sd * 0.12, 0.055, -0.2], [sd * 0.12, 0.04, -0.2]], 0.006, { radial: 5 })))),
+    // Set: the bail back over the board, held down.
+    bail: geometry(GFX, tube([[-0.12, 0.012, 0], [-0.13, 0, -0.03], [-0.14, 0, -0.24], [0.14, 0, -0.24], [0.13, 0, -0.03], [0.12, 0.012, 0]], 0.008, { radial: 6 })),
+  };
   const traps = house.traps.map((t, i) => {
     const y = house.heightAt(t.x, t.z) ?? 0;
     const g = new GFX.Group();
     g.position.set(t.x, y, t.z);
     g.rotation.y = (i * 1.3) % 1.2 - 0.6;
-    const base = new GFX.Mesh(new GFX.BoxGeometry(0.34, 0.04, 0.6), mats.wood);
-    base.position.y = 0.02;
-    const spring = new GFX.Mesh(new GFX.TorusGeometry(0.05, 0.012, 6, 14), mats.copper);
-    spring.position.set(0, 0.06, 0.02);
-    spring.rotation.y = Math.PI / 2;
-    const plate = new GFX.Mesh(new GFX.BoxGeometry(0.1, 0.012, 0.12), mats.steel);
-    plate.position.set(0, 0.05, 0.16);
-    const cheese = new GFX.Mesh(new GFX.ConeGeometry(0.05, 0.05, 3), mats.cheese);
-    cheese.position.set(0, 0.08, 0.17);
+    const base = new GFX.Mesh(trapParts.base, mats.wood);
+    const spring = new GFX.Mesh(trapParts.spring, mats.steel);
+    const plate = new GFX.Mesh(trapParts.plate, mats.copper);
+    const cheese = new GFX.Mesh(trapParts.cheese, mats.cheese);
+    const staples = new GFX.Mesh(trapParts.staples, mats.steel);
     // The bar, on a hinge at the middle: back over the board when set, over on the plate when it has gone off.
     const hinge = new GFX.Group();
-    hinge.position.set(0, 0.05, 0.02);
-    const bar = new GFX.Mesh(new GFX.BoxGeometry(0.3, 0.015, 0.015), mats.steel);
-    bar.position.z = -0.22;
-    const arms = [-1, 1].map((s) => {
-      const a = new GFX.Mesh(new GFX.BoxGeometry(0.015, 0.015, 0.22), mats.steel);
-      a.position.set(s * 0.15, 0, -0.11);
-      return a;
-    });
-    hinge.add(bar, ...arms);
-    g.add(base, spring, plate, cheese, hinge);
+    hinge.position.set(0, 0.062, 0.02);
+    hinge.add(new GFX.Mesh(trapParts.bail, mats.steel));
+    g.add(base, spring, plate, cheese, staples, hinge);
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     group.add(g);
     return { ...t, y, mesh: g, hinge, sprung: false, sprungAt: 0 };
   });
 
   // Nails: a head and a bit of shank, standing proud of the boards.
+  const nailShape = geometry(GFX, lathe([[0, -0.04], [0.016, -0.02], [0.02, 0.15], [0.048, 0.155], [0.05, 0.165], [0.04, 0.172], [0, 0.174]], 10));
   const nails = house.nails.map((n, i) => {
     const y = house.heightAt(n.x, n.z) ?? 0;
     const g = new GFX.Group();
     g.position.set(n.x + ((i * 0.37) % 0.3) - 0.15, y, n.z + ((i * 0.61) % 0.3) - 0.15);
-    const shank = new GFX.Mesh(new GFX.CylinderGeometry(0.018, 0.02, 0.16, 6), mats.nail);
-    shank.position.y = 0.08;
-    shank.rotation.z = 0.25;
-    const head = new GFX.Mesh(new GFX.CylinderGeometry(0.045, 0.045, 0.012, 10), mats.nail);
-    head.position.set(-0.02, 0.16, 0);
-    head.rotation.z = 0.25;
-    g.add(shank, head);
+    const nail = new GFX.Mesh(nailShape, mats.nail);
+    nail.rotation.set(0.1 * Math.sin(i * 1.7), i * 1.1, 0.22 + 0.1 * Math.cos(i));
+    g.add(nail);
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     group.add(g);
     return { ...n, y, mesh: g, x: g.position.x, z: g.position.z, last: -Infinity };
   });
 
   // The robot vacuum: a disc with a bumper and a light, humming its rounds.
+  const vacuumParts = {
+    body: geometry(GFX, lathe([[0, 0.04], [0.5, 0.04], [0.55, 0.07], [0.57, 0.12], [0.57, 0.22], [0.54, 0.27], [0.5, 0.285], [0, 0.29]], 40)),
+    bumper: geometry(GFX, moved(lathe([[0.575, 0.08], [0.6, 0.1], [0.6, 0.2], [0.575, 0.22]], 40), [0, 0, 0])),
+    top: geometry(GFX, joined([moved(ring(0.3, 0.012, { seg: 40, radial: 6 }), [0, 0.288, 0]), moved(lathe([[0, 0], [0.08, 0], [0.085, 0.015], [0, 0.02]], 20), [0, 0.288, -0.1])])),
+    brush: geometry(GFX, joined([0, 1, 2].map((k) => tube([[0, 0, 0], [Math.cos(k * 2.09) * 0.16, 0, Math.sin(k * 2.09) * 0.16]], 0.012, { radial: 5 })))),
+  };
   const vacuums = house.vacuums.map((v, i) => {
     const g = new GFX.Group();
-    const body = new GFX.Mesh(new GFX.CylinderGeometry(0.55, 0.57, 0.24, 28), mats.vacuum);
-    body.position.y = 0.16;
-    const rim = new GFX.Mesh(new GFX.CylinderGeometry(0.58, 0.58, 0.1, 28, 1, true, -1.2, 2.4), mats.rim);
-    rim.position.y = 0.12;
-    rim.material.side = GFX.DoubleSide;
-    const led = new GFX.Mesh(new GFX.SphereGeometry(0.035, 8, 6), mats.led);
-    led.position.set(0, 0.29, 0.3);
-    const brush = new GFX.Mesh(new GFX.CylinderGeometry(0.16, 0.16, 0.02, 3), mats.rim);
+    const body = new GFX.Mesh(vacuumParts.body, mats.vacuum);
+    const rim = new GFX.Mesh(vacuumParts.bumper, mats.rim);
+    const top = new GFX.Mesh(vacuumParts.top, mats.rim);
+    const led = new GFX.Mesh(new GFX.SphereGeometry(0.035, 10, 8), mats.led);
+    led.position.set(0, 0.3, 0.32);
+    const brush = new GFX.Mesh(vacuumParts.brush, mats.rim);
     brush.position.set(0.38, 0.03, 0.32);
-    g.add(body, rim, led, brush);
+    g.add(body, rim, top, led, brush);
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     group.add(g);
     return { ...v, i, mesh: g, brush, led, travelled: 0, x: v.path[0][0], z: v.path[0][1], y: 0, heading: 0, radius: 0.57 };
@@ -143,6 +143,12 @@ export function createActors(GFX, house, world, { yarnMaterial } = {}) {
   });
   world.boxes = lifts.map((l) => l.box);
 
+  const tinParts = {
+    can: geometry(GFX, lathe([[0, 0.01], [0.28, 0.01], [0.3, 0.03], [0.3, 0.2], [0.29, 0.21], [0.29, 0.06], [0, 0.06]], 40)),
+    rims: geometry(GFX, joined([moved(ring(0.3, 0.012, { seg: 40, radial: 6 }), [0, 0.025, 0]), moved(ring(0.296, 0.012, { seg: 40, radial: 6 }), [0, 0.205, 0])])),
+    lid: geometry(GFX, lathe([[0, 0], [0.24, 0], [0.26, 0.012], [0.3, 0.014], [0.315, 0.02], [0.315, 0.06], [0.3, 0.06], [0.3, 0.025], [0, 0.025]], 40)),
+  };
+
   // What lies about.
   const pickups = house.pickups.map((p, i) => {
     const mesh = new GFX.Group();
@@ -166,16 +172,17 @@ export function createActors(GFX, house, world, { yarnMaterial } = {}) {
         spin.add(b);
       }
     } else if (p.kind === 'tin') {
-      const can = new GFX.Mesh(new GFX.CylinderGeometry(0.3, 0.3, 0.24, 28), mats.tin);
-      can.position.y = 0.12;
-      const lid = new GFX.Mesh(new GFX.CylinderGeometry(0.315, 0.315, 0.06, 28), mats.tinLid);
-      lid.position.set(0.22, 0.04, 0.24);
-      lid.rotation.z = 0.25;
-      spin.add(can, lid);
+      // A round biscuit tin with a sewing box's worth of buttons in it, its lid off and leant against it.
+      const can = new GFX.Mesh(tinParts.can, mats.tin);
+      const rims = new GFX.Mesh(tinParts.rims, mats.tinLid);
+      const lid = new GFX.Mesh(tinParts.lid, mats.tinLid);
+      lid.position.set(0.34, 0.16, 0.0);
+      lid.rotation.z = 1.2;
+      spin.add(can, rims, lid);
       for (let k = 0; k < 7; k++) {
         const r = 0.07;
         const b = new GFX.Mesh(new GFX.CylinderGeometry(r, r, 0.03, 14), buttonMats[(k + i) % buttonMats.length]);
-        b.position.set(Math.cos(k * 2.3) * 0.15, 0.25 + (k % 2) * 0.02, Math.sin(k * 2.3) * 0.15);
+        b.position.set(Math.cos(k * 2.3) * 0.15, 0.17 + (k % 3) * 0.02, Math.sin(k * 2.3) * 0.15);
         b.rotation.set(Math.sin(k) * 0.4, 0, Math.cos(k) * 0.4);
         spin.add(b);
       }
@@ -263,45 +270,112 @@ export function createActors(GFX, house, world, { yarnMaterial } = {}) {
 }
 
 /**
- * A skein of the same red wool as the ball: a hank of strand wound round
- * and round in a long loop and given a twist, the way a skein is sold.
- * Made with the ball's own tube (`yarn/model.js`), in metres.
+ * A skein of the same red wool as the ball, the way wool is sold: strand
+ * wound criss-cross round and round into a plump oblong, the turns laid
+ * one over the last, with a paper band round its middle.
  */
 export function skeinMesh(GFX, material, seed = 0) {
-  const turns = 9, per = 90, n = turns * per;
+  const turns = 54, per = 52, n = turns * per;
+  // Half its length and its thickness, in metres, as the ball is.
+  const a = 0.068, b = 0.04;
   const C = new Float32Array(n * 3), T = new Float32Array(n * 3), NR = new Float32Array(n * 3), A = new Float32Array(n);
-  const L = 0.07, W = 0.022;
+  const OUT = new Float32Array(n);
   for (let i = 0; i < n; i++) {
-    const a = (i / per) * Math.PI * 2;
-    const k = i / n;
-    // A long loop, twisted on itself once along its length, each turn a little to one side.
-    const along = Math.cos(a) * L;
-    const twist = (along / L) * Math.PI * 0.5;
-    const across = Math.sin(a) * W + (k - 0.5) * 0.012;
-    C[3 * i] = along;
-    C[3 * i + 1] = Math.cos(twist) * across * 0.5 + 0.02;
-    C[3 * i + 2] = Math.sin(twist) * across + Math.sin(i * 0.37 + seed) * 0.002;
-    A[i] = i * 0.002;
+    const t = i / per, th = t * Math.PI * 2;
+    // Each turn goes end over end round the skein's length, on a plane a little askew so the turns cross,
+    // swung round the length a little further every turn.
+    const phi = t * 2.399963 + seed * 1.7, beta = 0.32 * Math.sin(t * 1.9 + seed);
+    const nx = Math.sin(beta), ny = Math.cos(beta) * Math.cos(phi), nz = Math.cos(beta) * Math.sin(phi);
+    // In the plane: the length (x, less its part along the plane's normal), and square to it.
+    let e1 = [1 - nx * nx, -nx * ny, -nx * nz];
+    const el = Math.hypot(...e1);
+    e1 = e1.map((v) => v / el);
+    const e2 = [ny * e1[2] - nz * e1[1], nz * e1[0] - nx * e1[2], nx * e1[1] - ny * e1[0]];
+    const u = [Math.cos(th) * e1[0] + Math.sin(th) * e2[0], Math.cos(th) * e1[1] + Math.sin(th) * e2[1], Math.cos(th) * e1[2] + Math.sin(th) * e2[2]];
+    // From the core out: each turn a little further out than the last.
+    const out = t / turns, layer = 0.86 + 0.14 * out;
+    const k = layer / Math.hypot(u[0] / a, u[1] / b, u[2] / b);
+    C[3 * i] = u[0] * k; C[3 * i + 1] = u[1] * k; C[3 * i + 2] = u[2] * k;
+    OUT[i] = out;
   }
   for (let i = 0; i < n; i++) {
-    const a = Math.max(0, i - 1), b = Math.min(n - 1, i + 1);
-    let tx = C[3 * b] - C[3 * a], ty = C[3 * b + 1] - C[3 * a + 1], tz = C[3 * b + 2] - C[3 * a + 2];
+    const p = Math.max(0, i - 1), q = Math.min(n - 1, i + 1);
+    let tx = C[3 * q] - C[3 * p], ty = C[3 * q + 1] - C[3 * p + 1], tz = C[3 * q + 2] - C[3 * p + 2];
     const l = Math.hypot(tx, ty, tz) || 1;
     tx /= l; ty /= l; tz /= l;
     T[3 * i] = tx; T[3 * i + 1] = ty; T[3 * i + 2] = tz;
-    let ux = 0 - ty * 0, uy = 1, uz = 0;
+    // The ring's reference: straight out from the middle, square to the strand.
+    let ux = C[3 * i] / (a * a), uy = C[3 * i + 1] / (b * b), uz = C[3 * i + 2] / (b * b);
     const d = ux * tx + uy * ty + uz * tz;
     ux -= d * tx; uy -= d * ty; uz -= d * tz;
     const ul = Math.hypot(ux, uy, uz) || 1;
     NR[3 * i] = ux / ul; NR[3 * i + 1] = uy / ul; NR[3 * i + 2] = uz / ul;
+    if (i > 0) A[i] = A[i - 1] + Math.hypot(C[3 * i] - C[3 * i - 3], C[3 * i + 1] - C[3 * i - 2], C[3 * i + 2] - C[3 * i - 1]);
   }
-  const geo = buildTube(GFX, n, C, T, NR, A, null, null, (i, x, y, z, nx, ny) => 0.55 + 0.45 * Math.max(0, ny));
+  // The turns underneath are in the shade of the ones over them.
+  const geo = buildTube(GFX, n, C, T, NR, A, null, null, (i, x, y, z, qx, qy, qz) => {
+    const facing = (qx * x / (a * a) + qy * y / (b * b) + qz * z / (b * b)) / Math.hypot(x / (a * a), y / (b * b), z / (b * b));
+    return (0.4 + 0.6 * Math.max(0, facing)) * (0.6 + 0.4 * OUT[i]);
+  });
   const mesh = new GFX.Mesh(geo, material);
   mesh.castShadow = true;
   mesh.name = 'skein';
+
+  // The paper band: round its middle, over the wool.
+  const profile = [];
+  for (let j = 0; j <= 12; j++) {
+    const x = (j / 12 - 0.5) * a * 0.7;
+    profile.push(new GFX.Vector2(b * Math.sqrt(1 - (x / a) ** 2) + YR * 1.6, x));
+  }
+  const band = new GFX.Mesh(new GFX.LatheGeometry(profile, 48), bandMaterial(GFX));
+  band.rotation.z = Math.PI / 2;
+  band.castShadow = true;
+
   const g = new GFX.Group();
-  g.scale.setScalar(1 / TILE_METRES * 1.6);
-  g.add(mesh);
-  void YR;
+  g.add(mesh, band);
+  g.rotation.set(0.25, seed * 0.7, 0.18);
+  g.scale.setScalar(1 / TILE_METRES * 1.35);
   return g;
+}
+
+let bandMat = null;
+
+/** The skein's paper band: cream, with red rules round it and a ball of wool on the label. */
+function bandMaterial(GFX) {
+  if (bandMat) return bandMat;
+  bandMat = new GFX.MeshPhysicalMaterial({ name: 'skein-band', color: new GFX.Color('#f2e8d2'), roughness: 0.7, side: GFX.DoubleSide });
+  if (typeof document === 'undefined') return bandMat;
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 128;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f2e8d2';
+  x.fillRect(0, 0, 512, 128);
+  // u runs round the band, v along it.
+  for (const y of [10, 108]) {
+    x.fillStyle = '#b8241a';
+    x.fillRect(0, y, 512, 10);
+  }
+  x.fillStyle = '#2a3a5a';
+  x.fillRect(0, 26, 512, 4);
+  x.fillRect(0, 98, 512, 4);
+  for (const cx of [128, 384]) {
+    // A ball of wool, and a few words.
+    x.fillStyle = '#c8281c';
+    x.beginPath(); x.arc(cx - 70, 64, 20, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = '#f2e8d2'; x.lineWidth = 2;
+    for (let k = -2; k <= 2; k++) { x.beginPath(); x.arc(cx - 70 + k * 6, 64, 20 - Math.abs(k) * 2, -1, 1); x.stroke(); }
+    x.fillStyle = '#2a3a5a';
+    x.font = 'bold 26px Georgia, serif';
+    x.textAlign = 'left';
+    x.textBaseline = 'middle';
+    x.fillText('PURE WOOL', cx - 40, 56);
+    x.font = '16px Georgia, serif';
+    x.fillText('50 g · 4 ply', cx - 40, 82);
+  }
+  const t = new GFX.CanvasTexture(c);
+  t.colorSpace = GFX.SRGBColorSpace;
+  t.wrapS = GFX.RepeatWrapping;
+  bandMat.map = t;
+  bandMat.needsUpdate = true;
+  return bandMat;
 }

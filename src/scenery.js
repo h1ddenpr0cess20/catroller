@@ -1,4 +1,5 @@
-import { partBounds } from './furniture.js';
+import { place } from './furniture.js';
+import { ball, books, cushion, joined, lathe, leaf, moved, ring, roundedBox, slab, swept, tinted, tube } from './shapes.js';
 import { createWaterMaterial } from './water.js';
 
 /**
@@ -266,25 +267,6 @@ function grainTexture(GFX) {
   });
 }
 
-/** Book spines along a shelf. */
-function booksTexture(GFX) {
-  return cached('books', () => {
-    const [c, ctx] = canvas(256, 64);
-    const rnd = random(5);
-    const colours = ['#7a2a2a', '#2a4a6a', '#3a5a3a', '#8a6a2a', '#5a3a5a', '#2a2a2a', '#a85a3a'];
-    let x = 0;
-    while (x < 256) {
-      const w = 6 + rnd() * 10, h = 40 + rnd() * 22;
-      ctx.fillStyle = colours[Math.floor(rnd() * colours.length)];
-      ctx.fillRect(x, 64 - h, w - 1, h);
-      ctx.fillStyle = 'rgba(255,220,150,0.5)';
-      ctx.fillRect(x + 1, 64 - h + 6, w - 3, 2);
-      x += w;
-    }
-    return { map: texture(GFX, c), bump: null };
-  });
-}
-
 /** Bricks, for the fireplace. */
 function brickTexture(GFX) {
   return cached('brick', () => {
@@ -300,7 +282,7 @@ function brickTexture(GFX) {
         ctx.fillRect(k * bw + (r % 2) * bw / 2 + 2, r * bh + 2, bw - 4, bh - 4);
       }
     }
-    return { map: texture(GFX, c, { repeat: [2, 2] }), bump: null };
+    return { map: texture(GFX, c, { repeat: [0.42, 0.62] }), bump: null };
   });
 }
 
@@ -360,56 +342,267 @@ function rugTexture(GFX, pattern, color, w, d) {
   });
 }
 
+/** Rope wound round a scratching post. */
+function sisalTexture(GFX) {
+  return cached('sisal', () => {
+    const size = 128;
+    const [c, ctx] = canvas(size);
+    const rnd = random(31);
+    ctx.fillStyle = '#b89a68';
+    ctx.fillRect(0, 0, size, size);
+    const turns = 8, step = size / turns;
+    for (let k = 0; k < turns; k++) {
+      const y = k * step;
+      const g = ctx.createLinearGradient(0, y, 0, y + step);
+      g.addColorStop(0, '#7a6440'); g.addColorStop(0.25, '#d8bc88'); g.addColorStop(0.6, '#c4a674'); g.addColorStop(1, '#6a5434');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, y, size, step);
+      // The fibres, twisted along the rope.
+      for (let f = 0; f < 40; f++) {
+        ctx.strokeStyle = `rgba(${rnd() < 0.5 ? '255,236,190' : '90,70,40'},${0.15 + rnd() * 0.2})`;
+        ctx.lineWidth = 1;
+        const x0 = rnd() * size;
+        ctx.beginPath();
+        ctx.moveTo(x0, y + 1);
+        ctx.lineTo(x0 + step * 0.8, y + step - 1);
+        ctx.stroke();
+      }
+    }
+    return { map: texture(GFX, c, { repeat: [3, 3.4] }), bump: null };
+  });
+}
+
+/** Wicker: canes woven over and under. */
+function wickerTexture(GFX) {
+  return cached('wicker', () => {
+    const size = 128;
+    const [c, ctx] = canvas(size);
+    ctx.fillStyle = '#6a4a26';
+    ctx.fillRect(0, 0, size, size);
+    const n = 8, s = size / n;
+    for (let j = 0; j < n; j++) {
+      for (let i = 0; i < n; i++) {
+        const across = (i + j) % 2 === 0;
+        const g = across ? ctx.createLinearGradient(0, j * s, 0, (j + 1) * s) : ctx.createLinearGradient(i * s, 0, (i + 1) * s, 0);
+        g.addColorStop(0, '#8a6232'); g.addColorStop(0.5, '#e0b878'); g.addColorStop(1, '#8a6232');
+        ctx.fillStyle = g;
+        ctx.fillRect(i * s + 1, j * s + 1, s - 2, s - 2);
+      }
+    }
+    return { map: texture(GFX, c, { repeat: [3, 3] }), bump: null };
+  });
+}
+
+/** A child's drawing of a cat, for the fridge door. */
+function drawingTexture(GFX) {
+  return cached('drawing', () => {
+    const [c, ctx] = canvas(128, 160);
+    ctx.fillStyle = '#fbf8f0';
+    ctx.fillRect(0, 0, 128, 160);
+    ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#e8862a';
+    ctx.beginPath(); ctx.ellipse(64, 100, 34, 26, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(64, 58, 22, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(46, 46); ctx.lineTo(44, 26); ctx.lineTo(58, 38); ctx.moveTo(70, 38); ctx.lineTo(84, 26); ctx.lineTo(82, 46); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(98, 104); ctx.quadraticCurveTo(122, 90, 112, 60); ctx.stroke();
+    ctx.fillStyle = '#2a8a3a';
+    ctx.beginPath(); ctx.arc(56, 56, 3, 0, Math.PI * 2); ctx.arc(72, 56, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#d02a2a';
+    ctx.beginPath(); ctx.arc(30, 140, 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#3a5ad0'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(10, 12); ctx.lineTo(118, 12); ctx.stroke();
+    const t = texture(GFX, c);
+    t.wrapS = t.wrapT = GFX.ClampToEdgeWrapping;
+    return { map: t, bump: null };
+  });
+}
+
+/** The face of the clock on the mantel. */
+function clockTexture(GFX) {
+  return cached('clock', () => {
+    const [c, ctx] = canvas(128);
+    ctx.fillStyle = '#f4ecd8';
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#2a2420';
+    ctx.translate(64, 64);
+    for (let k = 0; k < 12; k++) {
+      ctx.save(); ctx.rotate((k / 12) * Math.PI * 2); ctx.fillRect(-2, -58, 4, k % 3 ? 8 : 14); ctx.restore();
+    }
+    ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.strokeStyle = '#2a2420';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(18, -26); ctx.moveTo(0, 0); ctx.lineTo(-6, 42); ctx.stroke();
+    const t = texture(GFX, c);
+    t.wrapS = t.wrapT = GFX.ClampToEdgeWrapping;
+    return { map: t, bump: null };
+  });
+}
+
 /** The materials of the furniture, by name; a colour (`#rrggbb`) is upholstery in that colour. */
 function furnitureMaterials(GFX) {
   const grain = grainTexture(GFX).map, cloth = fabricTexture(GFX).map;
-  const P = (name, o) => new GFX.MeshPhysicalMaterial({ name, roughness: 0.7, ...o });
+  const P = (name, o) => new GFX.MeshPhysicalMaterial({ name, roughness: 0.7, vertexColors: true, ...o });
+  const col = (hex) => new GFX.Color(hex);
   const made = {
-    wood: P('wood', { color: new GFX.Color('#9a6a42'), map: grain, roughness: 0.5, clearcoat: 0.4, clearcoatRoughness: 0.3 }),
-    darkwood: P('darkwood', { color: new GFX.Color('#5a3a26'), map: grain, roughness: 0.45, clearcoat: 0.5, clearcoatRoughness: 0.25 }),
-    lightwood: P('lightwood', { color: new GFX.Color('#c8a070'), map: grain, roughness: 0.5, clearcoat: 0.3 }),
-    cabinet: P('cabinet', { color: new GFX.Color('#e8e2d2'), roughness: 0.5, clearcoat: 0.3 }),
-    cabinetDoor: P('cabinet-door', { color: new GFX.Color('#d8d0be'), roughness: 0.5, clearcoat: 0.3 }),
-    paint: P('paint', { color: new GFX.Color('#f0ebe0'), roughness: 0.55 }),
-    linen: P('linen', { color: new GFX.Color('#f2eee6'), map: cloth, roughness: 0.9, sheen: 0.6, sheenColor: new GFX.Color('#ffffff') }),
-    blanket: P('blanket', { color: new GFX.Color('#c86a5a'), map: cloth, roughness: 0.95, sheen: 1, sheenColor: new GFX.Color('#ffd0c0') }),
-    cushion: P('cushion', { color: new GFX.Color('#c8a888'), map: cloth, roughness: 0.95, sheen: 0.8, sheenColor: new GFX.Color('#ffffff') }),
-    brass: P('brass', { color: new GFX.Color('#c8a050'), roughness: 0.3, metalness: 1 }),
-    metal: P('metal', { color: new GFX.Color('#8a8c90'), roughness: 0.35, metalness: 0.9 }),
-    steel: P('steel', { color: new GFX.Color('#c8ccd0'), roughness: 0.25, metalness: 1 }),
-    iron: P('iron', { color: new GFX.Color('#2a2828'), roughness: 0.5, metalness: 0.8 }),
-    enamel: P('enamel', { color: new GFX.Color('#f6f4f0'), roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1 }),
-    stone: P('worktop', { color: new GFX.Color('#5a5a5e'), roughness: 0.3, clearcoat: 0.8 }),
-    screen: P('screen', { color: new GFX.Color('#101418'), roughness: 0.1, clearcoat: 1, emissive: new GFX.Color('#1a2a3a'), emissiveIntensity: 0.4 }),
-    piano: P('piano', { color: new GFX.Color('#14100e'), roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05 }),
-    keys: P('keys', { color: new GFX.Color('#f4f0e8'), roughness: 0.3, clearcoat: 0.6 }),
-    brick: P('brick', { color: new GFX.Color('#ffffff'), map: brickTexture(GFX).map, roughness: 0.9 }),
-    hearth: P('hearth', { color: new GFX.Color('#3a3634'), roughness: 0.8 }),
-    soot: P('soot', { color: new GFX.Color('#100c0a'), roughness: 1 }),
-    flame: new GFX.MeshBasicMaterial({ name: 'flame', color: new GFX.Color('#ffa040'), toneMapped: false }),
-    shade: P('shade', { color: new GFX.Color('#f6e6c0'), roughness: 0.9, emissive: new GFX.Color('#ffc870'), emissiveIntensity: 1.6, side: GFX.DoubleSide }),
-    terracotta: P('terracotta', { color: new GFX.Color('#b8603a'), roughness: 0.85 }),
-    leaf: P('leaf', { color: new GFX.Color('#3a6a32'), roughness: 0.6, sheen: 0.5, sheenColor: new GFX.Color('#9ad08a') }),
-    oven: P('oven', { color: new GFX.Color('#1a1a1c'), roughness: 0.15, clearcoat: 1 }),
-    porthole: P('porthole', { color: new GFX.Color('#304048'), roughness: 0.1, clearcoat: 1, metalness: 0.3 }),
-    bathwater: P('bathwater', { color: new GFX.Color('#8ac0d8'), roughness: 0.05, clearcoat: 1, emissive: new GFX.Color('#20384a'), emissiveIntensity: 0.4 }),
-    wicker: P('wicker', { color: new GFX.Color('#c89a5a'), map: cloth, roughness: 0.85 }),
-    cardboard: P('cardboard', { color: new GFX.Color('#c09a68'), roughness: 0.95 }),
-    tape: P('tape', { color: new GFX.Color('#d8b878'), roughness: 0.4, clearcoat: 0.6 }),
-    carpet: P('carpet-post', { color: new GFX.Color('#b8a890'), map: cloth, roughness: 1 }),
-    sisal: P('sisal', { color: new GFX.Color('#c8aa78'), roughness: 1 }),
-    coat: P('coat', { color: new GFX.Color('#4a3a5a'), map: cloth, roughness: 0.95, sheen: 0.6, sheenColor: new GFX.Color('#c0a0e0') }),
-    leather: P('leather', { color: new GFX.Color('#5a3a24'), roughness: 0.5, clearcoat: 0.4 }),
-    books: P('books', { color: new GFX.Color('#ffffff'), map: booksTexture(GFX).map, roughness: 0.8 }),
-    kibble: P('kibble', { color: new GFX.Color('#8a5a30'), roughness: 0.9 }),
+    wood: P('wood', { color: col('#9a6a42'), map: grain, roughness: 0.5, clearcoat: 0.4, clearcoatRoughness: 0.3 }),
+    darkwood: P('darkwood', { color: col('#5a3a26'), map: grain, roughness: 0.45, clearcoat: 0.5, clearcoatRoughness: 0.25 }),
+    lightwood: P('lightwood', { color: col('#c8a070'), map: grain, roughness: 0.5, clearcoat: 0.3 }),
+    cabinet: P('cabinet', { color: col('#e8e2d2'), roughness: 0.5, clearcoat: 0.3 }),
+    cabinetDoor: P('cabinet-door', { color: col('#ded6c4'), roughness: 0.45, clearcoat: 0.4 }),
+    paint: P('paint', { color: col('#f0ebe0'), roughness: 0.55 }),
+    linen: P('linen', { color: col('#f2eee6'), map: cloth, roughness: 0.9, sheen: 0.6, sheenColor: col('#ffffff') }),
+    blanket: P('blanket', { color: col('#c86a5a'), map: cloth, roughness: 0.95, sheen: 1, sheenColor: col('#ffd0c0') }),
+    cushion: P('cushion', { color: col('#c8a888'), map: cloth, roughness: 0.95, sheen: 0.8, sheenColor: col('#ffffff') }),
+    pillow: P('pillow', { color: col('#c89a3a'), map: cloth, roughness: 0.95, sheen: 1, sheenColor: col('#fff0c0') }),
+    seatpad: P('seatpad', { color: col('#8a3a3a'), map: cloth, roughness: 0.95, sheen: 0.8, sheenColor: col('#ffc0c0') }),
+    runner: P('runner', { color: col('#a8423a'), map: cloth, roughness: 0.95, sheen: 0.6, sheenColor: col('#ffd0c0') }),
+    wool: P('wool', { color: col('#ffffff'), map: cloth, roughness: 1, sheen: 1, sheenColor: col('#ffffff'), sheenRoughness: 0.5 }),
+    coat: P('coat', { color: col('#3a3448'), map: cloth, roughness: 0.95, sheen: 0.6, sheenColor: col('#a090c0') }),
+    hat: P('hat', { color: col('#2a2624'), roughness: 0.9, sheen: 0.5, sheenColor: col('#8a8078') }),
+    brass: P('brass', { color: col('#c8a050'), roughness: 0.3, metalness: 1 }),
+    metal: P('metal', { color: col('#8a8c90'), roughness: 0.35, metalness: 0.9 }),
+    steel: P('steel', { color: col('#c8ccd0'), roughness: 0.22, metalness: 1 }),
+    iron: P('iron', { color: col('#2a2828'), roughness: 0.5, metalness: 0.8 }),
+    basin: P('basin', { color: col('#5a5e62'), roughness: 0.25, metalness: 0.9 }),
+    enamel: P('enamel', { color: col('#f6f4f0'), roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.1 }),
+    china: P('china', { color: col('#eef2f6'), roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05 }),
+    seat: P('seat', { color: col('#faf8f4'), roughness: 0.25, clearcoat: 0.8 }),
+    plastic: P('plastic', { color: col('#ffffff'), roughness: 0.35, clearcoat: 0.6 }),
+    fruit: P('fruit', { color: col('#ffffff'), roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2 }),
+    glass: P('glass', { color: col('#c8dce0'), roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0.55 }),
+    stone: P('worktop', { color: col('#4e5054'), roughness: 0.25, clearcoat: 0.9 }),
+    screen: P('screen', { color: col('#0c1014'), roughness: 0.08, clearcoat: 1, emissive: col('#1a2a3a'), emissiveIntensity: 0.5, vertexColors: false }),
+    tvcase: P('tvcase', { color: col('#18181a'), roughness: 0.35, clearcoat: 0.6 }),
+    piano: P('piano', { color: col('#14100e'), roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.04 }),
+    keys: P('keys', { color: col('#f6f2e8'), roughness: 0.3, clearcoat: 0.7 }),
+    paper: P('paper', { color: col('#f6f2e6'), roughness: 0.9 }),
+    drawing: P('drawing', { color: col('#ffffff'), map: drawingTexture(GFX).map, roughness: 0.9 }),
+    clockface: P('clockface', { color: col('#ffffff'), map: clockTexture(GFX).map, roughness: 0.4, clearcoat: 0.8 }),
+    bookcover: P('bookcover', { color: col('#2a4a6a'), map: cloth, roughness: 0.7 }),
+    candle: P('candle', { color: col('#f6eedc'), roughness: 0.5, emissive: col('#ffcc88'), emissiveIntensity: 0.15 }),
+    brick: P('brick', { color: col('#ffffff'), map: brickTexture(GFX).map, roughness: 0.9 }),
+    hearth: P('hearth', { color: col('#3a3634'), roughness: 0.8 }),
+    soot: P('soot', { color: col('#100c0a'), roughness: 1 }),
+    ash: P('ash', { color: col('#4a4440'), roughness: 1, emissive: col('#ff5a10'), emissiveIntensity: 0.12 }),
+    log: P('log', { color: col('#4a3020'), map: grain, roughness: 0.95 }),
+    flame: new GFX.MeshBasicMaterial({ name: 'flame', color: col('#ff7a1a'), toneMapped: false, transparent: true, opacity: 0.85 }),
+    flamecore: new GFX.MeshBasicMaterial({ name: 'flamecore', color: col('#ffe08a'), toneMapped: false }),
+    shade: P('shade', { color: col('#f6e6c0'), roughness: 0.9, emissive: col('#ffc870'), emissiveIntensity: 1.6, side: GFX.DoubleSide, vertexColors: false }),
+    terracotta: P('terracotta', { color: col('#b8603a'), roughness: 0.85 }),
+    soil: P('soil', { color: col('#3a2618'), roughness: 1 }),
+    leaf: P('leaf', { color: col('#3a6a32'), roughness: 0.55, sheen: 0.5, sheenColor: col('#9ad08a'), side: GFX.DoubleSide }),
+    oven: P('oven', { color: col('#141416'), roughness: 0.08, clearcoat: 1 }),
+    porthole: P('porthole', { color: col('#304048'), roughness: 0.05, clearcoat: 1, metalness: 0.3 }),
+    bathwater: P('bathwater', { color: col('#8ac0d8'), roughness: 0.05, clearcoat: 1, emissive: col('#20384a'), emissiveIntensity: 0.4 }),
+    wicker: P('wicker', { color: col('#ffffff'), map: wickerTexture(GFX).map, roughness: 0.85 }),
+    needle: P('needle', { color: col('#d8b070'), roughness: 0.4, clearcoat: 0.6 }),
+    string: P('string', { color: col('#e8e0d0'), roughness: 0.9 }),
+    cardboard: P('cardboard', { color: col('#c09a68'), roughness: 0.95 }),
+    shadowline: P('shadowline', { color: col('#5a4228'), roughness: 1 }),
+    tape: P('tape', { color: col('#d8b878'), roughness: 0.35, clearcoat: 0.7 }),
+    carpet: P('carpet-post', { color: col('#b8a890'), map: cloth, roughness: 1, sheen: 0.6, sheenColor: col('#ffffff') }),
+    sisal: P('sisal', { color: col('#ffffff'), map: sisalTexture(GFX).map, roughness: 1 }),
+    leather: P('leather', { color: col('#5a3a24'), roughness: 0.45, clearcoat: 0.5 }),
+    boot: P('boot', { color: col('#2a1e18'), roughness: 0.4, clearcoat: 0.6 }),
+    hatbox: P('hatbox', { color: col('#c8a0a8'), roughness: 0.8 }),
+    books: P('books', { color: col('#ffffff'), map: cloth, roughness: 0.75 }),
+    kibble: P('kibble', { color: col('#8a5a30'), roughness: 0.9 }),
   };
   const fabrics = new Map();
   return (name) => {
     if (made[name]) return made[name];
     const colour = name && name.startsWith('#') ? name : '#8a6a5a';
-    if (!fabrics.has(colour)) fabrics.set(colour, P(`fabric-${colour}`, { color: new GFX.Color(colour), map: cloth, roughness: 0.95, sheen: 1, sheenColor: new GFX.Color('#ffffff'), sheenRoughness: 0.6 }));
+    if (!fabrics.has(colour)) fabrics.set(colour, P(`fabric-${colour}`, { color: col(colour), map: cloth, roughness: 0.95, sheen: 1, sheenColor: col('#ffffff'), sheenRoughness: 0.6 }));
     return fabrics.get(colour);
   };
+}
+
+/** No shading baked into these: they give light, or are lit from inside. */
+const UNSHADED = new Set(['flame', 'flamecore', 'shade', 'screen']);
+
+/** A plant's leaves: `count` of them round a centre, up and out and drooping, on a few stems. */
+function plantLeaves({ count = 24, len = 1.2, wide = 0.4, seed = 1 }) {
+  let s = seed * 9301 + 49297;
+  const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+  const list = [];
+  for (let k = 0; k < count; k++) {
+    const turn = k * 2.399963 + rnd() * 0.4;
+    const up = 0.35 + (1 - k / count) * 0.75 + rnd() * 0.2;
+    const l = len * (0.65 + rnd() * 0.45), w = wide * (0.75 + rnd() * 0.4);
+    const rise = (k / count) * len * 0.35 + rnd() * 0.1;
+    list.push(moved(leaf(l, w, { droop: 0.25 + rnd() * 0.25, fold: 0.3 }), [Math.cos(turn) * 0.05, rise, Math.sin(turn) * 0.05], [-up, Math.PI / 2 - turn, 0]));
+  }
+  return joined(list);
+}
+
+/** A part as a shape in its piece's own frame, or null if it isn't drawn. */
+function partShape(p) {
+  let g = null;
+  if (p.box) {
+    const [x0, y0, z0, x1, y1, z1] = p.box;
+    const r = p.round ?? 0.025;
+    g = moved(roundedBox(x1 - x0, y1 - y0, z1 - z0, r, p.seg ?? (r > 0.05 ? 3 : 2)), [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2], p.rot);
+  } else if (p.cyl) {
+    const [x, y0, z, r, y1] = p.cyl, h = y1 - y0;
+    const b = Math.min(0.015, r * 0.2, h * 0.2);
+    const profile = p.profile ?? [[0, 0], [r - b, 0], [r, b], [r, h - b], [r - b, h], [0, h]];
+    const rMax = Math.max(...profile.map((q) => q[0]));
+    g = moved(lathe(profile, rMax > 0.3 ? 32 : rMax > 0.1 ? 20 : 12), [x, y0, z], p.rot);
+  } else if (p.cone) {
+    const [x, y0, z, r0, r1, y1] = p.cone, h = y1 - y0;
+    const profile = p.mat === 'shade'
+      ? [[r0, 0], [r0 * 0.98, 0.05], [(r0 + r1) / 2 + 0.03, h / 2], [r1 * 1.02, h - 0.05], [r1, h]]
+      : [[0, 0], [r0, 0], [r0 * 0.75, h * 0.35], [r0 * 0.35, h * 0.75], [r1, h]];
+    g = moved(lathe(profile, 28), [x, y0, z]);
+  } else if (p.flame) {
+    const { r, h } = p;
+    g = moved(lathe([[0, 0], [r * 0.55, h * 0.04], [r * 0.95, h * 0.18], [r, h * 0.3], [r * 0.75, h * 0.52], [r * 0.38, h * 0.78], [r * 0.12, h * 0.93], [0, h]], 14), p.flame);
+  } else if (p.ball) {
+    const [x, y, z, r] = p.ball;
+    g = moved(ball(r, r > 0.2 ? 22 : 12), [x, y, z]);
+  } else if (p.pad) {
+    const [x0, y0, z0, x1, y1, z1] = p.pad;
+    g = moved(cushion(x1 - x0, y1 - y0, z1 - z0, { up: p.up, round: p.round }), [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2], p.rot);
+    if (p.clip !== undefined) for (let v = 1; v < g.p.length; v += 3) g.p[v] = Math.max(g.p[v], p.clip);
+  } else if (p.turned) {
+    const rMax = Math.max(...p.profile.map((q) => q[0]));
+    g = moved(lathe(p.profile, rMax > 0.3 ? 32 : 18), p.turned, p.rot);
+  } else if (p.tube) {
+    g = tube(p.tube, p.r, { radial: p.r > 0.08 ? 14 : 8 });
+  } else if (p.ring) {
+    g = moved(ring(p.R, p.r, { radial: 10 }), p.ring, p.rot);
+  } else if (p.books) {
+    const [x0, y0, z0, x1, y1, z1] = p.books;
+    g = books(x0, x1, y0, z1, y1 - y0, z1 - z0, p.seed);
+  } else if (p.leaves) {
+    g = moved(plantLeaves(p), p.leaves);
+  } else if (p.swept) {
+    g = moved(swept(p.profile, p.a, p.b, p.n, 56), p.swept);
+  } else if (p.slab) {
+    g = moved(slab(p.a, p.b, p.n, 0, { seg: 48 }), p.slab);
+  }
+  if (g && p.tint) g = tinted(g, p.tint);
+  return g;
+}
+
+/** A shape in piece `f`'s frame put on the grid: turned and moved there, and shaded darker low down and underneath. */
+function onGrid(g, f, shaded) {
+  const [w, d] = f.size;
+  const p = new Array(g.p.length), n = new Array(g.n.length), c = new Array(g.p.length);
+  for (let v = 0; v < g.p.length; v += 3) {
+    const [x, z] = place(g.p[v], g.p[v + 2], w, d, f.turns, f.x, f.z);
+    p[v] = x; p[v + 1] = g.p[v + 1] + f.y; p[v + 2] = z;
+    const nx = g.n[v], ny = g.n[v + 1], nz = g.n[v + 2];
+    const t = ((f.turns % 4) + 4) % 4;
+    const [a, b] = t === 1 ? [-nz, nx] : t === 2 ? [-nx, -nz] : t === 3 ? [nz, -nx] : [nx, nz];
+    n[v] = a; n[v + 1] = ny; n[v + 2] = b;
+    // Darker near the floor, where the light can't get in, and on the undersides of things.
+    const h = g.p[v + 1];
+    const s = Math.min(1, Math.max(0, h / 0.9));
+    let k = shaded ? (0.6 + 0.4 * s * s * (3 - 2 * s)) * (1 - 0.32 * Math.max(0, -ny)) : 1;
+    if (g.c) k = [g.c[v] * k, g.c[v + 1] * k, g.c[v + 2] * k];
+    else k = [k, k, k];
+    c[v] = k[0]; c[v + 1] = k[1]; c[v + 2] = k[2];
+  }
+  return { p, n, uv: g.uv, i: g.i, c };
 }
 
 /**
@@ -422,28 +615,28 @@ export function createFurniture(GFX, house) {
   group.name = 'furniture';
   const material = furnitureMaterials(GFX);
   const buckets = new Map();
-  const add = (mat, geometry, x, y, z, { turn = 0 } = {}) => {
-    if (!buckets.has(mat)) buckets.set(mat, []);
-    buckets.get(mat).push({ geometry, x, y, z, turn });
-  };
   for (const f of house.furniture) {
-    for (const p of f.parts) {
-      const mat = p.mat ?? '#8a6a5a';
-      const [x0, y0, z0, x1, y1, z1] = f.onGrid(partBounds(p));
-      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2;
-      if (p.box) add(mat, new GFX.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), cx, cy, cz);
-      else if (p.cyl && p.axis === 'z') {
-        const r = p.cyl[3];
-        add(mat, new GFX.CylinderGeometry(r, r, p.cyl[4] - p.cyl[1], 24), cx, cy, cz, { turn: f.turns % 2 ? 'x' : 'z' });
-      } else if (p.cyl) add(mat, new GFX.CylinderGeometry(p.cyl[3], p.cyl[3], p.cyl[4] - p.cyl[1], 20), cx, cy, cz);
-      else if (p.cone) add(mat, new GFX.CylinderGeometry(p.cone[4], p.cone[3], p.cone[5] - p.cone[1], 20, 1, mat === 'shade'), cx, cy, cz);
-      else if (p.ball) add(mat, new GFX.SphereGeometry(p.ball[3], 14, 10), cx, cy, cz);
+    for (const part of f.parts) {
+      if (part.draw === false) continue;
+      const g = partShape(part);
+      if (!g) continue;
+      const mat = part.mat ?? '#8a6a5a';
+      if (!buckets.has(mat)) buckets.set(mat, []);
+      buckets.get(mat).push(onGrid(g, f, !UNSHADED.has(mat)));
     }
   }
   for (const [name, list] of buckets) {
-    const mesh = new GFX.Mesh(merge(GFX, list), material(name));
+    const all = joined(list);
+    const geometry = new GFX.BufferGeometry();
+    geometry.setAttribute('position', new GFX.BufferAttribute(new Float32Array(all.p), 3));
+    geometry.setAttribute('normal', new GFX.BufferAttribute(new Float32Array(all.n), 3));
+    geometry.setAttribute('uv', new GFX.BufferAttribute(new Float32Array(all.uv), 2));
+    geometry.setAttribute('color', new GFX.BufferAttribute(new Float32Array(all.c), 3));
+    geometry.setIndex(new GFX.BufferAttribute(all.p.length / 3 > 65535 ? new Uint32Array(all.i) : new Uint16Array(all.i), 1));
+    geometry.computeBoundingSphere();
+    const mesh = new GFX.Mesh(geometry, material(name));
     mesh.name = `furniture-${name}`;
-    mesh.castShadow = name !== 'flame' && name !== 'shade';
+    mesh.castShadow = !UNSHADED.has(name);
     mesh.receiveShadow = true;
     group.add(mesh);
   }
@@ -460,46 +653,6 @@ export function createFurniture(GFX, house) {
     group.add(rug);
   }
   return group;
-}
-
-/** Many geometries, each moved to (x, y, z) (and laid on its side for `turn` 'x' or 'z'), as one. */
-function merge(GFX, list) {
-  let count = 0, indices = 0;
-  for (const { geometry } of list) {
-    count += geometry.attributes.position.count;
-    indices += geometry.index ? geometry.index.count : geometry.attributes.position.count;
-  }
-  const position = new Float32Array(count * 3), normal = new Float32Array(count * 3), uv = new Float32Array(count * 2);
-  const index = new Uint32Array(indices);
-  let v = 0, k = 0;
-  for (const { geometry, x, y, z, turn } of list) {
-    const p = geometry.attributes.position.array, n = geometry.attributes.normal.array;
-    const t = geometry.attributes.uv?.array;
-    const m = geometry.attributes.position.count;
-    for (let i = 0; i < m; i++) {
-      let px = p[3 * i], py = p[3 * i + 1], pz = p[3 * i + 2];
-      let nx = n[3 * i], ny = n[3 * i + 1], nz = n[3 * i + 2];
-      if (turn === 'z') { [py, pz] = [-pz, py]; [ny, nz] = [-nz, ny]; }
-      else if (turn === 'x') { [px, py] = [py, -px]; [nx, ny] = [ny, -nx]; }
-      position[3 * (v + i)] = px + x; position[3 * (v + i) + 1] = py + y; position[3 * (v + i) + 2] = pz + z;
-      normal[3 * (v + i)] = nx; normal[3 * (v + i) + 1] = ny; normal[3 * (v + i) + 2] = nz;
-      if (t) { uv[2 * (v + i)] = t[2 * i]; uv[2 * (v + i) + 1] = t[2 * i + 1]; }
-    }
-    if (geometry.index) {
-      const g = geometry.index.array;
-      for (let i = 0; i < g.length; i++) index[k++] = g[i] + v;
-    } else {
-      for (let i = 0; i < m; i++) index[k++] = v + i;
-    }
-    v += m;
-  }
-  const g = new GFX.BufferGeometry();
-  g.setAttribute('position', new GFX.BufferAttribute(position, 3));
-  g.setAttribute('normal', new GFX.BufferAttribute(normal, 3));
-  g.setAttribute('uv', new GFX.BufferAttribute(uv, 2));
-  g.setIndex(new GFX.BufferAttribute(index, 1));
-  g.computeBoundingSphere();
-  return g;
 }
 
 /** The meshes for a built house (see `buildHouse`): floors, walls, steps, the sides and the water. */
