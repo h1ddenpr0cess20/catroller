@@ -242,6 +242,8 @@ export function createBall(GFX, floor) {
 
   /** What has paid out, left where it lies: a piece of strand on the floor, in the house's tiles. */
   function cut(s) {
+    // Everything up to the contact laid first: rings not laid yet still hold strand from an earlier catch.
+    lay(s);
     const first = clamp(Math.floor((end - s - aLo()) / DL), 0, NL - 1);
     const n = rings - first;
     const geo = buildTube(GFX, n, C.slice(first * 3), T.slice(first * 3), NR.slice(first * 3), A.slice(first), RAD.slice(first), TILT.slice(first), laidAO);

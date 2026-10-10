@@ -90,6 +90,23 @@ describe('the loose end caught', () => {
     assert.ok(MAX_LAID >= 1.5);
   });
 
+  it('leaves what snapped off lying where the ball rolled, with no straight lines off to anywhere else', () => {
+    const { yarn, b, q, roll } = rig();
+    // Caught twice, so the second piece would run back to the first, as well as off to the house's corner.
+    for (const limit of [1.4, 0.6]) {
+      const x = b.x;
+      yarn.snag(b, q, { snap: limit });
+      // Full speed: 7.5 tiles a second at 120 steps a second.
+      const out = roll(0.0625, 400);
+      assert.ok(out?.snapped, 'it snapped');
+      const p = out.piece.group.children[0].geometry.attributes.position.array;
+      for (let v = 0; v < p.length; v += 3) {
+        assert.ok(Math.abs(p[v] - x * TILE_METRES) < 0.01, `a bit of it ${(Math.abs(p[v] - x * TILE_METRES) * 100).toFixed(1)} cm off the way the ball went`);
+      }
+      b.x += 3;
+    }
+  });
+
   it('snaps where it lies when the ball goes over the edge, or is put down somewhere else, and draws nothing past it', () => {
     for (const how of ['edge', 'moved']) {
       let over = false;

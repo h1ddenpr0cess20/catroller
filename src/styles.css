@@ -218,6 +218,7 @@ html, body {
   inset: 0;
   display: grid;
   grid-template-rows: 1fr auto;
+  gap: 36px;
   align-items: center;
   justify-items: center;
   padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
