@@ -124,6 +124,9 @@ export function roundedBox(w, h, d, r = 0.04, seg = 3) {
 }
 
 const spow = (v, e) => Math.sign(v) * Math.pow(Math.abs(v), e);
+/** cos and sin, exactly 0 where they should be: sin(π) is 1e-16, and to a small power that is a gap you can see. */
+const cosE = (t) => { const v = Math.cos(t); return Math.abs(v) < 1e-12 ? 0 : v; };
+const sinE = (t) => { const v = Math.sin(t); return Math.abs(v) < 1e-12 ? 0 : v; };
 
 /**
  * A cushion: a superellipsoid `w` × `h` × `d` centred on the origin — `up`
@@ -136,10 +139,10 @@ export function cushion(w, h, d, { up = 0.5, round = 0.3, seg = [28, 14] } = {})
   const g = blank();
   for (let j = 0; j <= sv; j++) {
     const eta = -Math.PI / 2 + (j / sv) * Math.PI;
-    const ce = Math.cos(eta), se = Math.sin(eta);
+    const ce = cosE(eta), se = sinE(eta);
     for (let k = 0; k <= su; k++) {
       const om = -Math.PI + (k / su) * TAU;
-      const co = Math.cos(om), so = Math.sin(om);
+      const co = cosE(om), so = sinE(om);
       const x = a * spow(ce, up) * spow(co, round), y = b * spow(se, up), z = c * spow(ce, up) * spow(so, round);
       let nx = spow(ce, 2 - up) * spow(co, 2 - round) / a, ny = spow(se, 2 - up) / b, nz = spow(ce, 2 - up) * spow(so, 2 - round) / c;
       const l = Math.hypot(nx, ny, nz) || 1;
@@ -349,7 +352,7 @@ export function swept(profile, a, b, n = 4, seg = 48) {
   const m = profile.length;
   const plan = [];
   for (let k = 0; k <= seg; k++) {
-    const t = (k / seg) * TAU, c = Math.cos(t), s = Math.sin(t);
+    const t = (k / seg) * TAU, c = cosE(t), s = sinE(t);
     const x = a * spow(c, 2 / n), z = b * spow(s, 2 / n);
     // Outward, from the curve's gradient.
     let nx = spow(x / a, n - 1) / a, nz = spow(z / b, n - 1) / b;
@@ -390,7 +393,7 @@ export function slab(a, b, n = 4, y = 0, { inset = 0, down = false, seg = 48 } =
   const g = blank();
   g.p.push(0, y, 0); g.n.push(0, down ? -1 : 1, 0); g.uv.push(0, 0);
   for (let k = 0; k <= seg; k++) {
-    const t = (k / seg) * TAU, c = Math.cos(t), s = Math.sin(t);
+    const t = (k / seg) * TAU, c = cosE(t), s = sinE(t);
     const x = (a - inset) * spow(c, 2 / n), z = (b - inset) * spow(s, 2 / n);
     g.p.push(x, y, z); g.n.push(0, down ? -1 : 1, 0); g.uv.push(x, z);
   }

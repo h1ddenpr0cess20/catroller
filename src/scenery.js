@@ -707,7 +707,8 @@ export function createHouseMeshes(GFX, built) {
 export function createLamps(GFX, house) {
   const group = new GFX.Group();
   group.name = 'lamps';
-  const brass = new GFX.MeshPhysicalMaterial({ name: 'sconce', color: new GFX.Color('#c8a050'), roughness: 0.3, metalness: 1 });
+  // Brass with some colour of its own: up on a wall all it would reflect is the dark, and all metal it looks black.
+  const brass = new GFX.MeshPhysicalMaterial({ name: 'sconce', color: new GFX.Color('#c8a050'), roughness: 0.35, metalness: 0.7 });
   const shade = new GFX.MeshPhysicalMaterial({ name: 'sconce-shade', color: new GFX.Color('#f6e6c0'), emissive: new GFX.Color('#ffc870'), emissiveIntensity: 1.8, roughness: 0.9, side: GFX.DoubleSide });
   const bulbs = [];
   // A brass wall light: a plate on the wall, an arm curling out and up, a cup of a shade on it, lit from inside.

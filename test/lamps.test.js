@@ -32,3 +32,26 @@ test('a wall light is on the face of its wall, and nothing on it lies flat on th
   }
   assert.ok(sconces >= 8, `${sconces} wall lights`);
 });
+
+test('no light is inside a piece of furniture: none behind the counters, none in a box', () => {
+  for (let i = 0; i < LEVELS.length; i++) {
+    const level = loadLevel(i).settle();
+    const { group } = createLamps(GFX, level);
+    group.updateMatrixWorld(true);
+    const v = new GFX.Vector3();
+    for (const lamp of group.children) {
+      for (const mesh of lamp.children) {
+        const p = mesh.geometry.attributes.position;
+        for (let k = 0; k < p.count; k++) {
+          v.fromBufferAttribute(p, k).applyMatrix4(mesh.matrixWorld);
+          for (const f of level.furniture) {
+            for (const s of f.solids) {
+              const inside = v.x > s[0] + 0.01 && v.x < s[3] - 0.01 && v.y > s[1] + 0.01 && v.y < s[4] - 0.01 && v.z > s[2] + 0.01 && v.z < s[5] - 0.01;
+              assert.ok(!inside, `${level.name}: the light at ${lamp.position.x}, ${lamp.position.z} is inside the ${f.kind}`);
+            }
+          }
+        }
+      }
+    }
+  }
+});
