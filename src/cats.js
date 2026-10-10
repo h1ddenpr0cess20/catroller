@@ -380,7 +380,13 @@ export function createCats(GFX, house, nav) {
             : cat.mode === 'watch' || cat.mode === 'play' ? 'busy'
               : cat.mode === 'search' || cat.suspicion > 0.08 ? 'unsure' : null;
         marks.set(cat.mark, show, cat.suspicion, time);
-        if (focus && Math.hypot(cat.x - focus.x, cat.z - focus.z) > reach) continue;
+        const away = focus ? Math.hypot(cat.x - focus.x, cat.z - focus.z) : 0;
+        if (away > reach) continue;
+        // Posing a cat costs; one far off, or asleep, is posed every second or third frame.
+        const every = cat.mode === 'sleep' ? 3 : away > 10 ? 3 : away > 6 ? 2 : 1;
+        cat.posed = (cat.posed ?? 0) + 1;
+        if (cat.posed < every) continue;
+        cat.posed = 0;
         const clip = {
           sleep: 'sleep', sit: 'sit', patrol: 'walk', return: 'walk', watch: cat.moving ? 'stalk' : 'crouch',
           alert: 'alert', chase: 'run', swat: 'swat', play: 'play', search: cat.moving ? 'walk' : 'look',
