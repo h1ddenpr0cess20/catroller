@@ -396,15 +396,22 @@ export const FURNITURE = {
   toilet: {
     size: [2, 3],
     parts: () => [
-      box(0.2, 1.6, 0.2, 1.8, 3.0, 0.9, 'enamel', { round: 0.12 }),
-      deco(0.15, 2.95, 0.15, 1.85, 3.08, 0.95, 'enamel', { round: 0.05 }),
-      knob(1.55, 2.75, 0.92, 0.06, 'steel'),
+      // A low-level cistern on the wall, its lid and its handle, and the flush pipe down into the back of the pan.
+      box(0.25, 1.85, 0.02, 1.75, 3.25, 0.6, 'enamel', { round: 0.1 }),
+      deco(0.2, 3.2, 0.02, 1.8, 3.32, 0.66, 'enamel', { round: 0.05 }),
+      knob(0.42, 3.02, 0.62, 0.05, 'steel'),
+      pipe([[0.42, 3.02, 0.62], [0.42, 3.02, 0.7], [0.72, 2.97, 0.7]], 0.022, 'steel'),
+      pipe([[1, 1.9, 0.3], [1, 1.55, 0.3], [1, 1.32, 0.45], [1, 1.22, 0.7], [1, 1.2, 0.92]], 0.07, 'steel'),
       cyl(1, 0, 1.6, 0.45, 1.2, 'enamel', { draw: false }),
       cyl(1, 1.2, 1.7, 0.75, 1.5, 'enamel', { draw: false }),
-      // The pan, its seat and lid.
-      bowl(1, 0, 1.65, 0.38, 0.55, 2.3, [[0.04, 0], [0.04, 0.1], [-0.04, 0.3], [0.08, 0.9], [0.32, 1.32], [0.32, 1.38], [0.26, 1.4], [0.18, 1.3]], 'enamel'),
+      // The pan: out from its foot to the rim, then in over it and down inside to the water.
+      bowl(1, 0, 1.65, 0.38, 0.55, 2.3, [[0.04, 0], [0.04, 0.1], [-0.04, 0.3], [0.08, 0.9], [0.32, 1.32], [0.32, 1.38], [0.26, 1.4], [0.18, 1.3],
+        [0.1, 1.2], [-0.02, 1.02], [-0.12, 0.86], [-0.16, 0.7]], 'enamel'),
+      sheet(1, 0.88, 1.65, 0.29, 0.46, 2.3, 'bathwater'),
+      // The seat on its hinges, and the lid up, resting back against the cistern.
       bowl(1, 1.4, 1.7, 0.6, 0.8, 2.3, [[-0.18, 0], [0, 0], [0.03, 0.04], [0, 0.08], [-0.18, 0.08], [-0.22, 0.04], [-0.18, 0]], 'seat'),
-      deco(0.35, 1.48, 0.85, 1.65, 2.95, 0.98, 'seat', { round: 0.18 }),
+      knob(0.62, 1.47, 0.92, 0.055, 'steel'), knob(1.38, 1.47, 0.92, 0.055, 'steel'),
+      pad(0.39, 2.28, -0.01, 1.61, 2.36, 1.61, 'seat', { up: 0.3, round: 0.6, rot: [1.41, 0, 0] }),
     ],
   },
   basin: {
@@ -413,6 +420,9 @@ export const FURNITURE = {
       cyl(1, 0, 1, 0.28, 2.6, 'enamel', { profile: [[0, 0], [0.36, 0], [0.36, 0.06], [0.24, 0.3], [0.2, 1.6], [0.26, 2.3], [0.42, 2.6], [0, 2.6]] }),
       box(0.05, 2.6, 0.2, 1.95, 3.0, 1.8, 'enamel', { draw: false }),
       bowl(1, 2.55, 1.05, 0.68, 0.58, 2.6, [[-0.5, 0], [-0.1, 0.05], [0.12, 0.3], [0.14, 0.42], [0.08, 0.46], [0.0, 0.42], [-0.3, 0.2], [-0.5, 0.15]], 'enamel'),
+      // Its bottom, and the plughole in it.
+      sheet(1, 2.7, 1.05, 0.2, 0.1, 2.6, 'enamel'),
+      sheet(1, 2.705, 1.05, 0.05, 0.05, 2, 'steel'),
       pipe([[1, 2.98, 0.32], [1, 3.35, 0.32], [1, 3.42, 0.5], [1, 3.3, 0.62]], 0.045, 'steel'),
     ],
   },
@@ -469,12 +479,13 @@ export const FURNITURE = {
   trunk: {
     size: [4, 2],
     parts: () => [
-      box(0, 0, 0, 4, 2.0, 2.2, 'darkwood', { draw: false }),
-      deco(0, 0, 0, 4, 1.45, 2.2, 'darkwood', { round: 0.06 }),
-      pad(0, 1.0, 0, 4, 2.02, 2.2, 'darkwood', { up: 0.55, round: 0.12, clip: 1.42 }),
-      deco(-0.03, 1.38, -0.03, 4.03, 1.52, 2.23, 'brass', { round: 0.03 }),
-      ...[0.7, 3.3].map((x) => deco(x - 0.14, 0.02, -0.03, x + 0.14, 1.98, 2.23, 'leather', { round: 0.04 })),
-      deco(1.85, 1.15, 2.2, 2.15, 1.5, 2.26, 'brass', { round: 0.03 }),
+      // Within its two tiles, bands, straps and clasp too, so it is clear of a wall whichever way it stands.
+      box(0.03, 0, 0.03, 3.97, 2.0, 1.91, 'darkwood', { draw: false }),
+      deco(0.03, 0, 0.03, 3.97, 1.45, 1.91, 'darkwood', { round: 0.06 }),
+      pad(0.03, 1.0, 0.03, 3.97, 2.02, 1.91, 'darkwood', { up: 0.55, round: 0.12, clip: 1.42 }),
+      deco(0, 1.38, 0, 4, 1.52, 1.94, 'brass', { round: 0.03 }),
+      ...[0.7, 3.3].map((x) => deco(x - 0.14, 0.02, 0, x + 0.14, 1.98, 1.94, 'leather', { round: 0.04 })),
+      deco(1.85, 1.15, 1.91, 2.15, 1.5, 1.97, 'brass', { round: 0.03 }),
     ],
   },
   catTree: {
@@ -486,6 +497,7 @@ export const FURNITURE = {
       box(0, 4.4, 0, 2, 4.6, 2, 'carpet', { solid: false, round: 0.09 }),
       // A bed on top, and a toy on a string from the middle shelf.
       bowl(1, 4.6, 1, 0.78, 0.78, 2, [[-0.6, 0], [0.0, 0.0], [0.08, 0.15], [0.06, 0.32], [-0.04, 0.36], [-0.12, 0.28], [-0.2, 0.1], [-0.6, 0.08]], 'carpet'),
+      sheet(1, 4.675, 1, 0.22, 0.22, 2, 'carpet'),
       pipe([[1.9, 2.2, 1.9], [1.92, 1.35, 1.92]], 0.012, 'string'),
       knob(1.92, 1.27, 1.92, 0.11, 'wool', { tint: [0.9, 0.2, 0.5] }),
     ],

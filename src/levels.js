@@ -76,7 +76,7 @@ function sewingRoom() {
   c.put('table', room.x + 4, room.z, { facing: '+z' });
   c.put('chair', room.x + 6, room.z + 4, { facing: '-z' });
   c.put('bookshelf', room.x + 10, room.z, {});
-  c.put('floorLamp', room.x + 13, room.z, {});
+  c.put('floorLamp', room.x + 12, room.z + 2, {});
   c.put('plant', room.x, room.z + 9);
   c.rug(room.x + 3, room.z + 6, 7, 4, { pattern: 'stripes', color: '#7a4a5a' });
   // A grey cat, asleep on the rug: roll softly.
@@ -143,9 +143,10 @@ function bedroom() {
   d.turn('+z', { width: 4, floor: 'wood' });
   // The dressing room: a run of wardrobes, a mouse running its rounds, a grey cat watching for it.
   const dress = d.hall(16, { width: 7, paper: 1, floor: 'wood' });
-  c.put('wardrobe', ...dress.tile(1, -3));
-  c.put('wardrobe', ...dress.tile(6, -3));
-  c.put('shoeRack', ...dress.tile(11, -3));
+  // Along the wall, their backs to it.
+  c.put('wardrobe', ...dress.tile(1, -2), { facing: '-x' });
+  c.put('wardrobe', ...dress.tile(6, -2), { facing: '-x' });
+  c.put('shoeRack', ...dress.tile(11, -3), { facing: '-x' });
   c.put('box', ...dress.tile(3, 2), { h: 1.6 });
   c.critter('mouse', ...dress.tile(9, 1), { path: [dress.tile(9, 1), dress.tile(14, 1), dress.tile(14, 2), dress.tile(9, 2)] });
   c.hole(...dress.tile(15, -3), '-x');
@@ -228,7 +229,7 @@ function kitchen() {
   c.put('counter', k.x + 7, k.z);
   c.put('sink', k.x + 11, k.z);
   c.put('counter', k.x + 15, k.z);
-  c.put('fridge', k.x + 17, k.z + 2, { facing: '-x' });
+  c.put('fridge', k.x + 18, k.z + 3, { facing: '-x' });
   c.put('table', k.x + 7, k.z + 7);
   for (const [x, z, f] of [[6, 7, '+x'], [6, 9, '+x'], [13, 7, '-x'], [13, 9, '-x'], [8, 5, '+z'], [10, 5, '+z'], [8, 11, '-z'], [10, 11, '-z']]) c.put('chair', k.x + x, k.z + z, { facing: f });
   c.put('bowls', k.x + 1, k.z + 13);
@@ -243,7 +244,8 @@ function kitchen() {
   c.critter('fly', k.x + 12, k.z + 4);
   c.button(k.x + 9, k.z + 8, 4).button(k.x + 2, k.z + 6, 2).button(k.x + 17, k.z + 10, 3).button(k.x + 12, k.z + 14, 2);
   c.tin(k.x + 10, k.z + 9, 25);
-  c.lamp(k.x + 6, k.z - 1, 3).lamp(k.x + 14, k.z - 1, 3);
+  // Not over the counters: the walls are too low for a light above them. On the far wall, and over the corner past them.
+  c.lamp(k.x - 1, k.z + 12, 3).lamp(k.x + 19, k.z - 1, 3);
   d.hall(3, { floor: 'wood' });
   d.turn('+z', { width: 4, floor: 'boards' });
   // The pantry passage: shelves, boxes and sacks, two mice and a cat between them.
@@ -258,7 +260,7 @@ function kitchen() {
   c.trap(p.x + 3, p.z + 7);
   c.skein(p.x + 1, p.z + 15, 8);
   c.button(p.x + 3, p.z + 2, 3).button(p.x + 5, p.z + 15, 3);
-  c.lamp(p.x - 1, p.z + 8);
+  c.lamp(p.x - 1, p.z + 6);
   const corner = d.turn('+x', { width: 6, floor: 'boards' });
   const out = d.hall(5, { width: 3, floor: 'wood' });
   c.seal(corner, 'x1');
@@ -307,7 +309,7 @@ function livingRoom() {
   d.turn('+z', { width: 4, floor: 'wood' });
   // The conservatory: tiles and plants, flies everywhere, a grey cat on the prowl.
   const con = d.hall(14, { width: 9, floor: 'tile', color: 1, paper: 2 });
-  for (const [a, b] of [[2, -4], [6, 3], [10, -4], [12, 2]]) c.put('plant', ...con.tile(a, b));
+  for (const [a, b] of [[2, -3], [6, 3], [10, -3], [12, 2]]) c.put('plant', ...con.tile(a, b));
   c.critter('fly', ...con.tile(3, 1)).critter('fly', ...con.tile(9, -1)).critter('beetle', ...con.tile(7, -3), { path: [con.tile(5, -3), con.tile(9, -3)] });
   c.cat('grey', ...con.tile(4, 1), { does: 'patrol', path: [con.tile(1, 1), con.tile(11, 1), con.tile(11, -2), con.tile(1, -2)], range: 10 });
   c.water(...con.tile(8, 1), 2, 2, 30);
@@ -413,7 +415,7 @@ function frontHall() {
   const porch = d.hall(12, { width: 7, paper: 1 });
   c.put('shoeRack', ...porch.tile(2, 3), { facing: '+x' });
   c.put('plant', ...porch.tile(9, 3));
-  c.put('basket', ...porch.tile(5, -3));
+  c.put('basket', ...porch.tile(5, -2));
   c.cat('tom', ...porch.tile(8, -1), { does: 'sit', facing: Math.PI * 1.75, range: 8 });
   c.critter('beetle', ...porch.tile(5, 2), { path: [porch.tile(4, 2), porch.tile(6, 2)] });
   c.cat('black', ...porch.tile(3, -2), { does: 'sleep', facing: 0.4 });
