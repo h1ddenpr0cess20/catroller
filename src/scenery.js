@@ -714,7 +714,8 @@ export function createLamps(GFX, house) {
   const sconce = {
     arm: geometry(GFX, joined([
       tube([[0, -0.75, 0], [0, -0.68, 0.1], [0, -0.48, 0.2], [0, -0.28, 0.22]], 0.035, { radial: 8 }),
-      moved(lathe([[0, 0], [0.14, 0], [0.15, 0.02], [0.1, 0.05], [0, 0.05]], 18), [0, -0.75, 0.0], [-Math.PI / 2, 0, 0]),
+      // Its back to the wall and a hair off it, domed into the room: a face flat on the wallpaper would flicker with it.
+      moved(lathe([[0, 0], [0.14, 0], [0.15, 0.02], [0.1, 0.05], [0, 0.05]], 18), [0, -0.75, 0.01], [Math.PI / 2, 0, 0]),
       moved(lathe([[0, 0], [0.07, 0], [0.08, 0.04], [0.05, 0.08], [0, 0.08]], 14), [0, -0.3, 0.22]),
     ])),
     shade: geometry(GFX, moved(lathe([[0.32, 0], [0.31, 0.04], [0.26, 0.2], [0.22, 0.34], [0.22, 0.36]], 24), [0, -0.3, 0.22])),
