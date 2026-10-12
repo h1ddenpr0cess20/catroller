@@ -49,6 +49,13 @@ export const WORTH = {
   bump: 0.5,
 };
 
+/**
+ * The sound, before it goes out: the score's low end is heavy on a phone, so
+ * the bottom is cut and the top lifted, to about the balance of the other
+ * games' reels.
+ */
+export const MIX = 'highpass=f=40,bass=g=-9:f=120:w=0.7,treble=g=4:f=3000:w=0.6';
+
 /** How long the card to end on stays up, in seconds. */
 export const CARD = 4.6;
 
