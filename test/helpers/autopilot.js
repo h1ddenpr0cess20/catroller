@@ -104,6 +104,66 @@ export function plan(sneak, net, from, to) {
 }
 
 /**
+ * Steers the yarn through `sneak`, a step at a time, for whatever runs the
+ * steps: `drive()` below, or the game itself (the reels). `next()` is the
+ * push along the ground for the coming step, or `{ stuck }` if it can find no
+ * way on; `saw(out)` is told what that step did. After the ball is lost, it
+ * plans again from wherever it is put back. It goes slower where the floor
+ * drops away beside it, and keeps out of the vacuum's way.
+ */
+export function createPilot(sneak) {
+  const { level, ball: b } = sneak;
+  const net = graph(sneak);
+  const exits = [];
+  for (let z = 0; z < level.rows; z++) for (let x = 0; x < level.cols; x++) if (level.cell(x, z)?.kind === 'exit') exits.push([x, z]);
+  const goal = exits[Math.floor(exits.length / 2)];
+  const here = () => [Math.floor(b.x), Math.floor(b.z)];
+  let route = plan(sneak, net, here(), goal);
+  let wp = 0, still = 0, lost = false;
+  let stuck = route ? null : 'no way to the doorway';
+
+  return {
+    get stuck() { return stuck; },
+
+    next() {
+      if (stuck) return { stuck };
+      if (lost) { lost = false; route = plan(sneak, net, here(), goal) ?? []; wp = 0; }
+      for (let tries = 0; ; tries++) {
+        if (tries > 1000) return { stuck: (stuck = { at: here() }) };
+        if (wp >= route.length) {
+          route = plan(sneak, net, here(), goal);
+          wp = 0;
+          if (!route || !route.length) return { stuck: (stuck = { at: here() }) };
+        }
+        const [tx, tz] = route[wp].map((v) => v + 0.5);
+        const dx = tx - b.x, dz = tz - b.z, d = Math.hypot(dx, dz);
+        if (d < 0.5) { wp++; continue; }
+        // Slower where the floor drops away beside it.
+        const cell = level.cell(...route[wp]);
+        const edgy = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ex, ez]) => !level.cell(route[wp][0] + ex, route[wp][1] + ez));
+        const speed = cell?.stair ? 2.4 : edgy ? 2.6 : 3.4;
+        let vx = (dx / d) * speed, vz = (dz / d) * speed;
+        // The vacuum coming: get out of its way and wait.
+        for (const v of sneak.actors.vacuums) {
+          const ax = b.x - v.x, az = b.z - v.z, av = Math.hypot(ax, az);
+          if (av < 2.2) { vx = (ax / av) * 3; vz = (az / av) * 3; }
+        }
+        let px = (vx - b.vx) * 0.9, pz = (vz - b.vz) * 0.9;
+        const l = Math.hypot(px, pz);
+        if (l > 1) { px /= l; pz /= l; }
+        return { push: [px, pz] };
+      }
+    },
+
+    saw(out) {
+      if (Math.hypot(b.vx, b.vz) < 0.05) still += STEP; else still = 0;
+      if (still > 15) stuck ??= { at: here(), wp, of: route.length };
+      if (out.outcome && out.outcome !== 'exit') lost = true;
+    },
+  };
+}
+
+/**
  * Rolls level `index` to the doorway. Returns whether it got there, how
  * long it took, every way the ball was lost, and how much yarn it has left.
  */
@@ -111,55 +171,31 @@ export function drive(index, { limit = 600, sample = null, quiet = true } = {}) 
   let sneak = null;
   const yarn = createBall(GFX, (x, z) => sneak?.level.heightAt(x, z) ?? null);
   sneak = createSneak(GFX, index, { yarn });
-  const { level, ball: b } = sneak;
-  const net = graph(sneak);
+  const b = sneak.ball;
   const losses = [], snags = [];
-  const exits = [];
-  for (let z = 0; z < level.rows; z++) for (let x = 0; x < level.cols; x++) if (level.cell(x, z)?.kind === 'exit') exits.push([x, z]);
-  const goal = exits[Math.floor(exits.length / 2)];
-  const here = () => [Math.floor(b.x), Math.floor(b.z)];
-  let route = plan(sneak, net, here(), goal);
-  if (!route) return { finished: false, time: 0, losses, snags, stuck: 'no way to the doorway' };
-  let wp = 0, t = 0, still = 0, down = 0;
+  const pilot = createPilot(sneak);
+  if (pilot.stuck) return { finished: false, time: 0, losses, snags, stuck: pilot.stuck };
+  let t = 0, down = 0;
   while (t < limit) {
     t += STEP;
     if (down > 0) {
       down -= STEP;
       stepSneak(sneak, [0, 0], STEP, { live: false, moving: false });
-      if (down <= 0) { putBack(sneak); route = plan(sneak, net, here(), goal) ?? []; wp = 0; }
+      if (down <= 0) putBack(sneak);
       continue;
     }
-    if (wp >= route.length) {
-      route = plan(sneak, net, here(), goal);
-      wp = 0;
-      if (!route || !route.length) return { finished: false, time: t, losses, snags, stuck: { at: here() } };
-    }
-    const [tx, tz] = route[wp].map((v) => v + 0.5);
-    const dx = tx - b.x, dz = tz - b.z, d = Math.hypot(dx, dz);
-    if (d < 0.5) { wp++; continue; }
-    // Slower where the floor drops away beside it.
-    const cell = level.cell(...route[wp]);
-    const edgy = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ex, ez]) => !level.cell(route[wp][0] + ex, route[wp][1] + ez));
-    const speed = cell?.stair ? 2.4 : edgy ? 2.6 : 3.4;
-    let vx = (dx / d) * speed, vz = (dz / d) * speed;
-    // The vacuum coming: get out of its way and wait.
-    for (const v of sneak.actors.vacuums) {
-      const ax = b.x - v.x, az = b.z - v.z, av = Math.hypot(ax, az);
-      if (av < 2.2) { vx = (ax / av) * 3; vz = (az / av) * 3; }
-    }
-    let px = (vx - b.vx) * 0.9, pz = (vz - b.vz) * 0.9;
-    const l = Math.hypot(px, pz);
-    if (l > 1) { px /= l; pz /= l; }
-    const out = stepSneak(sneak, [px, pz], STEP, { quiet });
+    const move = pilot.next();
+    if (move.stuck) return { finished: false, time: t, losses, snags, stuck: move.stuck };
+    const out = stepSneak(sneak, move.push, STEP, { quiet });
+    pilot.saw(out);
     if (out.noticed.length) snags.push(`noticed by ${out.noticed.map((c) => c.kind)} at ${t.toFixed(1)}`);
     if (out.caught) snags.push(`caught by ${out.caught.kind} at ${t.toFixed(1)}`);
     sample?.(sneak);
-    if (Math.hypot(b.vx, b.vz) < 0.05) still += STEP; else still = 0;
-    if (still > 15) return { finished: false, time: t, losses, snags, stuck: { at: here(), wp, of: route.length } };
+    if (pilot.stuck) return { finished: false, time: t, losses, snags, stuck: pilot.stuck };
     if (out.snag) snags.push(out.snag);
     if (out.outcome === 'exit') return { finished: true, time: t, losses, snags, yarn: yarn.metres, sneak };
     if (out.outcome) {
-      losses.push({ how: out.outcome, at: [b.x.toFixed(1), b.y.toFixed(1), b.z.toFixed(1)], wp, time: t.toFixed(1) });
+      losses.push({ how: out.outcome, at: [b.x.toFixed(1), b.y.toFixed(1), b.z.toFixed(1)], time: t.toFixed(1) });
       down = 1.5;
     }
   }

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1024">
+<meta name="description" content="Catroller: roll a ball of red yarn through a house at night without the cats catching you. They're busy watching the mice and the flies — so don't scare those off.">
+<title>Catroller — reels</title>
+<link rel="stylesheet" href="/src/styles.css">
+<link rel="stylesheet" href="/src/reel/reel.css">
+<style>
+  /* The film's own words: no banner under the opening line, and the title's name on the card. */
+  body.hooked #banner { visibility: hidden; }
+  #card h1 { margin: 0; font-family: "Cooper Black", "Cooper Std", "Bookman Old Style", "Recoleta", Georgia, serif; font-weight: 400; font-size: 70px; letter-spacing: 0.01em; color: #fff4e2; text-shadow: 0 5px 0 #7a2412, 0 10px 30px rgba(0, 0, 0, 0.7); }
+  #card .tag { margin: 6px 0 0; font-size: 15px; font-weight: 700; letter-spacing: 0.4em; text-transform: uppercase; color: #e8c8a0; }
+</style>
+</head>
+<body>
+<div id="view"></div>
+
+<header id="top" hidden>
+  <div id="level"></div>
+  <div class="purse"><span class="label">buttons</span><span id="score">0</span></div>
+  <div class="yarn">
+    <span class="label">yarn</span>
+    <span class="meter"><i></i></span>
+    <span id="metres"></span>
+  </div>
+</header>
+
+<canvas id="map" width="180" height="180" hidden aria-label="Map of what has been seen"></canvas>
+<ul id="cats" hidden aria-label="The cats"></ul>
+
+<div id="banner" hidden></div>
+<div id="pause" hidden>PAUSED<small>P to carry on</small></div>
+
+<section id="title" hidden>
+  <div class="stars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <header class="crest">
+    <h1>Catroller</h1>
+    <p class="tag">roll quietly</p>
+  </header>
+  <div class="menu">
+    <button id="start" type="button"><span>Roll out</span></button>
+    <div id="levels" aria-label="Start from a room"></div>
+    <p id="best"></p>
+    <p class="help">
+      <span class="keys"><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> or <kbd>WASD</kbd> roll</span>
+      <span>hold the mouse or a finger — roll toward it</span>
+      <span>the cats are watching the mice and flies — don't scare them off</span>
+      <span>caught by the strand? roll back along it to wind it on</span>
+      <span class="keys"><kbd>Q</kbd><kbd>E</kbd> or right-drag turn · wheel or <kbd>+</kbd><kbd>−</kbd> zoom · <kbd>C</kbd> reset view</span>
+      <span class="touch">two fingers: pinch to zoom, twist to turn</span>
+      <span class="keys"><kbd>P</kbd> pause · <kbd>M</kbd> mute</span>
+    </p>
+  </div>
+</section>
+
+<button id="mute" type="button" aria-pressed="false">sound on</button>
+<pre id="error" hidden></pre>
+
+<script type="module" src="/src/reel/recorder.js"></script>
+</body>
+</html>

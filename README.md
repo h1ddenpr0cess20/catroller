@@ -155,6 +155,7 @@ near you.
 | `npm run lint` | ESLint |
 | `node scripts/map.js 3` | Prints a level as text, for laying one out (`--heights` for the floor heights). |
 | `node scripts/bake.js` | Bakes the models the way the game does, and says how big they came out. |
+| `node scripts/reel.js` | Gameplay reels for social media, into `reels/`: upright 1080×1920 films of the game as a phone shows it, played by the autopilot with its own music and sound (the cats see it as they would a player), each ending on a card with the address. `scripts/reels.js` says which. They are filmed a frame at a time in headless Chromium (`reel.html`, `src/reel/`), so there's no GPU needed, only ffmpeg and half an hour or so a reel. |
 
 `yarn.html` shows the ball on its own: on Carol's route, caught and rolled out
 (`?snag=1`), or rolling free (`?free=1`).

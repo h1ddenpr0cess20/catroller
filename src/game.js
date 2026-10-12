@@ -206,10 +206,11 @@ export function createGame({ stage, hud, input, audio, storage }) {
     saved = storage.record(buttons);
   }
 
-  function physics(push) {
+  function physics(push, auto = null) {
     const live = state === 'play';
     const moving = yarn.root.visible && !(state === 'lost' && lostHow !== 'fell');
     const out = stepSneak(sneak, push, STEP, { live, moving });
+    if (auto) debug.pilot.saw(out);
     const b = sneak.ball;
     if (out.impact > 2.5) {
       audio.bump(out.impact);
@@ -293,7 +294,9 @@ export function createGame({ stage, hud, input, audio, storage }) {
     while (accumulator >= STEP) {
       accumulator -= STEP;
       if (state === 'title') { stepSneak(sneak, [0, 0], STEP, { live: false, moving: false }); continue; }
-      physics(push);
+      // Steered by the autopilot (the reels), if one is aboard; by the controls if not.
+      const auto = state === 'play' && debug.pilot ? debug.pilot.next() : null;
+      physics(auto?.push ?? push, auto);
       if (state === 'over') break;
     }
 
@@ -363,9 +366,14 @@ export function createGame({ stage, hud, input, audio, storage }) {
     target.z += (b.z - target.z) * k;
   }
 
-  /** For tests and the console: the level, the ball, the yarn and a camera override (`look`). */
+  /**
+   * For tests and the console: the level, the ball, the yarn, a camera
+   * override (`look`), and something to steer the yarn in place of the
+   * controls (`pilot`: the autopilot's `createPilot()`, asked every step while
+   * in play).
+   */
   const debug = {
-    stage, look: null, yarn,
+    stage, look: null, yarn, pilot: null,
     get sneak() { return sneak; },
     get ball() { return sneak.ball; },
     get state() { return state; },
