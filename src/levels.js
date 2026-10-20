@@ -203,7 +203,7 @@ function landing() {
   c.put('plant', foot.x + 6, foot.z);
   c.cat('black', foot.x + 3, foot.z + 5, { does: 'sit', facing: 0.4 });
   c.critter('mouse', foot.x + 1, foot.z + 6);
-  c.hole(foot.x, foot.z + 7, '+x');
+  c.hole(foot.x, foot.z + 7, '-z');
   c.tin(foot.x + 6, foot.z + 6, 25);
   d.turn('+z', { width: 3 });
   d.hall(5);
