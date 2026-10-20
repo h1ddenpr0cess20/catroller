@@ -35,6 +35,12 @@ describe('the rooms', () => {
         for (const p of level.pickups) assert.ok(onFloor(p.x, p.z), `a ${p.kind} at ${p.x},${p.z}`);
         for (const t of level.traps) assert.ok(onFloor(t.x, t.z), `a trap at ${t.x},${t.z}`);
         for (const h of level.holes) assert.ok(onFloor(h.x + 0.5, h.z + 0.5), `a mouse hole at ${h.x},${h.z}`);
+        // A hole is in the skirting: there is wall behind it, the way it faces from.
+        const behind = { '+z': [0, -1], '-z': [0, 1], '+x': [-1, 0], '-x': [1, 0] };
+        for (const h of level.holes) {
+          const [dx, dz] = behind[h.facing];
+          assert.equal(level.cell(h.x + dx, h.z + dz)?.kind, 'wall', `a mouse hole at ${h.x},${h.z} facing ${h.facing} has no wall behind it`);
+        }
       });
 
       it('can be rolled through, from the start to the doorway, without being lost once', () => {
