@@ -1,24 +1,25 @@
+import { saveSlot } from 'madness-engine/storage';
+
 /**
  * What the game remembers between visits: the most buttons a run has come
  * out with, and the furthest room reached (any room up to it can be
  * started from the title). Browser storage can be missing or refuse, so
- * every touch of it is guarded and the game plays the same without it.
+ * the engine's slot guards every touch of it and the game plays the same
+ * without it.
  */
 
 const KEY = 'catroller.v1';
 
 export function createStorage(store = globalThis.localStorage) {
-  let saved = { best: 0, reached: 0 };
-  try {
-    const raw = JSON.parse(store?.getItem(KEY) ?? 'null');
-    if (raw && typeof raw === 'object') {
-      saved.best = Number.isFinite(raw.best) ? raw.best : 0;
-      saved.reached = Number.isInteger(raw.reached) ? raw.reached : 0;
-    }
-  } catch {}
+  const slot = saveSlot(KEY, store);
+  const raw = slot.read();
+  let saved = {
+    best: Number.isFinite(raw?.best) ? raw.best : 0,
+    reached: Number.isInteger(raw?.reached) ? raw.reached : 0,
+  };
 
   const save = () => {
-    try { store?.setItem(KEY, JSON.stringify(saved)); } catch {}
+    slot.write(saved);
     return { ...saved };
   };
 

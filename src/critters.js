@@ -1,7 +1,7 @@
-import mouseDef from './models/cast/mouse.js';
-import { ball, cushion, geometry, joined, leaf, moved, tube } from './shapes.js';
+import mouseDef from 'madness-engine/characters/mouse';
+import { createModel } from 'madness-engine/models/model';
 import { isBaked, ready } from './models/library.js';
-import { createModel } from './models/model.js';
+import { ball, cushion, geometry, joined, leaf, moved, tube } from './shapes.js';
 
 /**
  * Mice and bugs: harmless to the ball, and the best friends it has, because

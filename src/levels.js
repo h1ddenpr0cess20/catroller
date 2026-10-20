@@ -328,7 +328,7 @@ function livingRoom() {
  * and mice — and the cats that are after them.
  */
 function cellar() {
-  const c = new House({ name: 'The Cellar', depth: 6, cols: 100, rows: 100, palette: { ...CELLAR, mood: { sky: 0.5, key: 0.7 } }, next: 'the Front Hall',
+  const c = new House({ name: 'The Cellar', depth: 6, cols: 100, rows: 100, palette: { ...CELLAR, light: { sky: 0.5, key: 0.7 } }, next: 'the Front Hall',
     intro: 'Nails in the boards. A gap in the floor. Mice everywhere.' });
   const d = digger(c, { x: 3, z: 8, h: 40, heading: '+x', floor: 'boards', paper: 0 });
   const top = d.hall(4, { width: 3 });

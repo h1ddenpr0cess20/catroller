@@ -1,110 +1,31 @@
-import { createScore, themeFor } from './score.js';
+import { createAudio as createSound, NOTE } from 'madness-engine/audio';
+import { createScore, themeFor } from 'madness-engine/music/score';
 
 /**
- * Every sound, made on the spot with Web Audio — no samples — as Dungeon
- * Roller does it. The rolling is a soft brushed rumble, louder on bare
- * boards than on carpet; the ball bumps softly (it's wool); cats meow and
- * hiss, mice squeak, flies buzz off; a mousetrap snaps, the strand twangs
- * when it's caught and plucks when it breaks. The music is a score of its
- * own (score.js).
+ * Every sound, made on the spot with Web Audio — no samples — on the
+ * engine's sound (`madness-engine/audio`). The rolling is a soft brushed
+ * rumble, louder on bare boards than on carpet; the ball bumps softly (it's
+ * wool); cats meow and hiss, mice squeak, flies buzz off; a mousetrap snaps,
+ * the strand twangs when it's caught and plucks when it breaks. The music is
+ * a score of its own (`madness-engine/music/score`).
  *
  * Nothing can play until the page has had a click or a key (browsers
  * insist), so `wake()` is called on the first one.
  */
 
-const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
-
 export function createAudio() {
-  let ctx = null, master = null, sfx = null, music = null;
-  let roll = null, noise = null;
-  let muted = false;
-  let score = null;
-
-  try { muted = localStorage.getItem('catroller.muted') === '1'; } catch {}
-
-  function wake() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
-    const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
-    if (!AC) return;
-    ctx = new AC();
-    master = ctx.createGain();
-    master.gain.value = muted ? 0 : 0.8;
-    master.connect(ctx.destination);
-    sfx = ctx.createGain();
-    sfx.gain.value = 0.9;
-    sfx.connect(master);
-    music = ctx.createGain();
-    music.gain.value = 0.55;
-    music.connect(master);
-
-    noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-    const data = noise.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-
-    const source = ctx.createBufferSource();
-    source.buffer = noise;
-    source.loop = true;
-    const band = ctx.createBiquadFilter();
-    band.type = 'bandpass';
-    band.frequency.value = 200;
-    band.Q.value = 0.7;
-    const low = ctx.createBiquadFilter();
-    low.type = 'lowpass';
-    low.frequency.value = 700;
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    source.connect(band).connect(low).connect(gain).connect(sfx);
-    source.start();
-    roll = { band, low, gain };
-  }
-
-  const now = () => ctx.currentTime;
-
-  function burst({ at = 0, length = 0.1, type = 'lowpass', freq = 1000, q = 0.7, gain = 0.5, sweep = null }) {
-    if (!ctx) return;
-    const t = now() + at;
-    const s = ctx.createBufferSource();
-    s.buffer = noise;
-    const f = ctx.createBiquadFilter();
-    f.type = type;
-    f.frequency.setValueAtTime(freq, t);
-    if (sweep) f.frequency.exponentialRampToValueAtTime(sweep, t + length);
-    f.Q.value = q;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(gain, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + length);
-    s.connect(f).connect(g).connect(sfx);
-    s.start(t, Math.random() * 1.5);
-    s.stop(t + length + 0.05);
-  }
-
-  function tone({ at = 0, freq = 440, to = null, length = 0.15, type = 'sine', gain = 0.3, attack = 0.005, vibrato = 0 }) {
-    if (!ctx) return;
-    const t = now() + at;
-    const o = ctx.createOscillator();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    if (to) o.frequency.exponentialRampToValueAtTime(to, t + length);
-    if (vibrato) {
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 7;
-      const depth = ctx.createGain();
-      depth.gain.value = vibrato;
-      lfo.connect(depth).connect(o.frequency);
-      lfo.start(t);
-      lfo.stop(t + length + 0.05);
-    }
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(gain, t + attack);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + length);
-    o.connect(g).connect(sfx);
-    o.start(t);
-    o.stop(t + length + 0.05);
-  }
+  let roll = null, score = null;
+  const audio = createSound({
+    storageKey: 'catroller.muted',
+    volume: { music: 0.55, sfx: 0.9 },
+    // The roll: noise through a band and a low-pass, silent until the ball moves.
+    onWake: (a) => { roll = a.loop({ filters: [{ type: 'bandpass', freq: 200, q: 0.7 }, { type: 'lowpass', freq: 700 }] }); },
+  });
+  const { burst, tone, now } = audio;
 
   /** A voice: a buzzy source through two formant filters, the pitch following `pitches` (Hz at each fraction of `length`). */
   function voice({ at = 0, pitches, length, formants = [[900, 6], [1600, 8]], gain = 0.2, breath = 0.04 }) {
+    const { ctx, sfx } = audio;
     if (!ctx) return;
     const t = now() + at;
     const o = ctx.createOscillator();
@@ -134,24 +55,20 @@ export function createAudio() {
   }
 
   return {
-    wake,
+    wake: audio.wake,
 
-    get muted() { return muted; },
+    get muted() { return audio.muted; },
 
-    toggleMute() {
-      muted = !muted;
-      try { localStorage.setItem('catroller.muted', muted ? '1' : '0'); } catch {}
-      if (master) master.gain.setTargetAtTime(muted ? 0 : 0.8, now(), 0.05);
-      return muted;
-    },
+    toggleMute: audio.toggleMute,
 
     /** The hush of wool rolling, every frame: speed in tiles a second, whether it's on anything, and whether that's bare floor. */
     rolling(speed, grounded, hard = true) {
       if (!roll) return;
       const level = grounded ? Math.min(hard ? 0.2 : 0.09, speed * (hard ? 0.022 : 0.011)) : 0;
+      const [band, low] = roll.filters;
       roll.gain.gain.setTargetAtTime(level, now(), 0.05);
-      roll.band.frequency.setTargetAtTime((hard ? 160 : 110) + speed * (hard ? 40 : 20), now(), 0.08);
-      roll.low.frequency.setTargetAtTime(hard ? 900 : 450, now(), 0.1);
+      band.frequency.setTargetAtTime((hard ? 160 : 110) + speed * (hard ? 40 : 20), now(), 0.08);
+      low.frequency.setTargetAtTime(hard ? 900 : 450, now(), 0.1);
     },
 
     /** The ball landing or bumping into something, as hard as `speed`: a soft, woolly thump. */
@@ -183,6 +100,7 @@ export function createAudio() {
 
     /** A happy cat, with a toy. */
     purr() {
+      const { ctx, sfx } = audio;
       if (!ctx) return;
       const t = now();
       const o = ctx.createOscillator();
@@ -277,8 +195,8 @@ export function createAudio() {
 
     /** The music for room `depth`. */
     startMusic(depth = 1) {
-      if (!ctx) return;
-      score ??= createScore(ctx, music, noise);
+      if (!audio.ctx) return;
+      score ??= createScore(audio.ctx, audio.music, audio.noise);
       if (score.playing) return;
       score.start(themeFor(depth));
     },

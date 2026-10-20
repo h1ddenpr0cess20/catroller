@@ -3,15 +3,17 @@
  * floor under lamplight, to look at while sculpting. Not part of the
  * game. ?m=cat-ginger,mouse&clip=walk&yaw=0.6&pitch=0.3&dist=1.4&time=0
  * (time fixed for a still; no time and it plays; detail=0.5 for the
- * board's mesh; ty=0.6 to look at that height). A model not yet in the cast
- * is loaded from its file.
+ * board's mesh; ty=0.6 to look at that height). Anything else in the
+ * engine's library can be looked at too, by name (?m=rat,punk).
  */
 
-import * as GFX from '../vendor/gfx/index.js';
-import { createRenderer, paintRoom } from '../stage.js';
-import { createModel } from './model.js';
-import { CAST } from './cast/index.js';
-import { PROPS } from './props/index.js';
+import { CHARACTERS } from 'madness-engine/characters';
+import * as GFX from 'madness-engine/gfx';
+import { createModel } from 'madness-engine/models/model';
+import { PROPS } from 'madness-engine/props';
+import { createRenderer } from 'madness-engine/stage';
+import { paintRoom } from 'madness-engine/textures/rooms/house';
+import { CAST } from './cast.js';
 
 const params = new URLSearchParams(location.search);
 const host = document.getElementById('view');
@@ -56,10 +58,10 @@ scene.background = null;
 let models = [];
 const state = { look: params.has('ty') ? Number(params.get('ty')) : null, clip: params.get('clip') ?? 'sit', t: 0, yaw: Number(params.get('yaw') ?? 0.6), pitch: Number(params.get('pitch') ?? 0.32), dist: Number(params.get('dist') ?? 1), time: params.has('time') ? Number(params.get('time')) : null, playing: !params.has('time') };
 
-/** A definition by name: from the cast, or straight from its file while it is being sculpted. */
+/** A definition by name: from the cast, or from the engine's library. */
 const defs = new Map();
 async function load(name) {
-  if (!defs.has(name)) defs.set(name, CAST[name] ?? PROPS[name] ?? (await import(`./cast/${name}.js`)).default);
+  if (!defs.has(name)) defs.set(name, CAST[name] ?? CHARACTERS[name] ?? PROPS[name]);
   return defs.get(name);
 }
 

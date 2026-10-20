@@ -7,11 +7,11 @@
  *   ?free=1       the game's ball rolling free
  */
 
-import * as GFX from '../vendor/gfx/index.js';
-import { createRenderer } from '../stage.js';
-import { rollSpin, turn } from '../physics.js';
-import { createBall, TILE_METRES } from './ball.js';
-import { createYarn } from './model.js';
+import * as GFX from 'madness-engine/gfx';
+import { createBall, TILE_METRES } from 'madness-engine/heroes/yarn/ball';
+import { createYarn } from 'madness-engine/heroes/yarn/model';
+import { rollSpin, turn } from 'madness-engine/physics';
+import { createRenderer } from 'madness-engine/stage';
 
 const params = new URLSearchParams(location.search);
 const host = document.getElementById('view');

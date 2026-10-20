@@ -2,19 +2,20 @@
  * Bakes models the way the game does and says what came out: how many
  * vertices and triangles, per material, and how long it took.
  *
- *   node scripts/bake.js            every model and prop, close-up and board detail
- *   node scripts/bake.js rat 1      one model at one detail
+ *   node scripts/bake.js            every creature in the house, close-up and board detail
+ *   node scripts/bake.js rat 1      one model of the engine's library at one detail
  */
-import { CAST } from '../src/models/cast/index.js';
-import { bake } from '../src/models/model.js';
-import { PROPS } from '../src/models/props/index.js';
+import { CHARACTERS } from 'madness-engine/characters';
+import { bake } from 'madness-engine/models/model';
+import { PROPS } from 'madness-engine/props';
+import { CAST } from '../src/models/cast.js';
 
 const [name, detail] = process.argv.slice(2);
-const names = name ? [name] : [...Object.keys(CAST), ...Object.keys(PROPS)];
+const names = name ? [name] : Object.keys(CAST);
 const details = detail ? [Number(detail)] : [1, 0.5];
 for (const n of names) {
-  // A model not yet in the cast is loaded from its file.
-  const def = CAST[n] ?? PROPS[n] ?? (await import(`../src/models/cast/${n}.js`)).default;
+  // Anything else in the engine's library can be baked too, by name.
+  const def = CAST[n] ?? CHARACTERS[n] ?? PROPS[n];
   for (const d of details) {
     const t0 = performance.now();
     const m = bake(def, { detail: d });
