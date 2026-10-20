@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { LEVELS, loadLevel } from '../src/levels.js';
 import { createLamps } from '../src/scenery.js';
-import * as GFX from '../src/vendor/gfx/index.js';
+import * as GFX from 'madness-engine/gfx';
 
 test('a wall light is on the face of its wall, and nothing on it lies flat on the wallpaper to flicker with it', () => {
   let sconces = 0;

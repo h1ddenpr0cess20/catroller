@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { toGround } from '../src/sneak.js';
-import { createView, groundAxes, HOME, LIMITS } from '../src/view.js';
+import { toGround } from 'madness-engine/view';
+import { createView, groundAxes, HOME, LIMITS } from 'madness-engine/views/close';
 
 const near = (a, b, e = 1e-9) => a.every((v, i) => Math.abs(v - b[i]) < e);
 

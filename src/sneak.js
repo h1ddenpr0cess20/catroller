@@ -1,11 +1,10 @@
+import { BREAK_SPEED, createBall, placeBall, rollSpin, stepBall, turn } from 'madness-engine/physics';
 import { createActors } from './actors.js';
 import { createCats } from './cats.js';
 import { createCritters } from './critters.js';
 import { buildHouse, DEPTH } from './house.js';
 import { loadLevel } from './levels.js';
 import { createNav } from './nav.js';
-import { BREAK_SPEED, createBall, placeBall, rollSpin, stepBall, turn } from './physics.js';
-import { groundAxes } from './view.js';
 
 /**
  * One level as it is played, without anything drawn or heard: the house,
@@ -39,14 +38,8 @@ const HARD = new Set(['wood', 'tile', 'boards', 'stone']);
 /** How hard each floor drags at the ball as it rolls, per second (Madness's rolling resistance is 0.55). */
 const DRAG = { wood: 0, tile: 0, boards: 0.15, stone: 0.1, carpet: 0.9, rug: 0.6 };
 
-/** A push on the screen (x right, y up) as a push along the ground, for a camera turned to `yaw`. */
-export function toGround({ x, y }, yaw) {
-  const { right, up } = groundAxes(yaw);
-  return [x * right[0] + y * up[0], x * right[1] + y * up[1]];
-}
-
 /**
- * A level, `index`, with the yarn ball `yarn` (yarn/ball.js) — which goes
+ * A level, `index`, with the yarn ball `yarn` (`madness-engine/heroes/yarn/ball`) — which goes
  * from level to level, and with it whatever yarn it has left.
  */
 export function createSneak(GFX, index, { yarn, q = [0, 0, 0, 1] }) {

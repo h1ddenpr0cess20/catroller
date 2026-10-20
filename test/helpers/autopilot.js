@@ -8,10 +8,10 @@
  * can be rolled through from the basket to the doorway.
  */
 
-import * as GFX from '../../src/vendor/gfx/index.js';
+import * as GFX from 'madness-engine/gfx';
+import { createBall } from 'madness-engine/heroes/yarn/ball';
+import { FALL_LIMIT } from 'madness-engine/physics';
 import { createSneak, putBack, STEP, stepSneak } from '../../src/sneak.js';
-import { FALL_LIMIT } from '../../src/physics.js';
-import { createBall } from '../../src/yarn/ball.js';
 
 /** The furthest it will drop: well short of a drop that hurts. */
 export const DROP = FALL_LIMIT * 0.6;

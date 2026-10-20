@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import * as GFX from '../src/vendor/gfx/index.js';
+import * as GFX from 'madness-engine/gfx';
 import { createCats } from '../src/cats.js';
 import { createCritters } from '../src/critters.js';
 import { House } from '../src/house.js';

@@ -14,10 +14,18 @@ what scared it off.
 The ball is the "Yarn" character asset, one strand wound into a ball, as
 [Carol](https://github.com/h1ddenpr0cess20/carol) has it ported onto the
 engine. Its winding, its tube and its ply texture are Carol's code, unchanged.
-Everything else is built on
-[Dungeon Roller](https://github.com/h1ddenpr0cess20/dungeon-roller): the
-renderer, the ball physics, the tiled levels and the digger that lays them
-out, the camera, the controls, and the way models are sculpted and baked.
+The tiled levels and the digger that lays them out come from
+[Dungeon Roller](https://github.com/h1ddenpr0cess20/dungeon-roller).
+
+The game runs on the
+[Madness Engine](https://github.com/h1ddenpr0cess20/madness-engine), the
+rolling games' engine. The renderer, the ball physics, the controls, the
+camera, the stage, the sound, the flying bits, browser storage and the
+sculpting kit are all the engine's. The cats, the mouse, the yarn ball, the
+music and the painted house round the reflections are in the engine's
+library, where Catroller put them, and the game takes them from there. Its
+cats are the library's, so they are finer than they were: their ears are thin
+shells up on the crown, and their tails curve along their length.
 
 ![The title screen](docs/screenshots/title.jpg)
 
@@ -130,21 +138,21 @@ near you.
 
 | | |
 |---|---|
-| `src/vendor/gfx/` | Alan's renderer, as Dungeon Roller and Carol have it. It uses WebGPU where the browser has it and WebGL 2 where it doesn't (`?renderer=webgl` pins it). |
-| `src/yarn/winding.js`, `model.js`, `path.js` | The Yarn character, from Carol: the winding, the tube with its ply texture, and the strand's path. The only change is that `model.js` exports its tube builder for the ball to use. |
-| `src/yarn/ball.js` | Carol's ball rolled by the game's physics instead of along Carol's route. It rolls free until something catches the end, then lays the strand out along the floor and poses the ball from it. It also winds the strand back on, snaps it, and cuts off the piece that is left behind. |
-| `src/physics.js` | The ball physics, as Dungeon Roller has it. |
+| `madness-engine` | The engine: `gfx` (Alan's renderer; WebGPU where the browser has it and WebGL 2 where it doesn't, and `?renderer=webgl` pins it), `physics`, `input`, `views/close` (the camera), `stage`, `audio`, `effects`, `storage` and the sculpting kit (`models/…`). |
+| `madness-engine/heroes/yarn/…` | The Yarn character, from Carol: the winding, the tube with its ply texture, and the strand's path. `ball` is Carol's ball rolled by the physics instead of along Carol's route: it rolls free until something catches the end, then lays the strand out along the floor and poses the ball from it. It also winds the strand back on, snaps it, and cuts off the piece that is left behind. |
+| `madness-engine/characters/cat`, `mouse` | The cats and the mouse, sculpted in code from signed distance fields. The cats are built bone by bone like a real cat, so they can sit on their haunches, curl up in a loaf, walk and gallop, and they blend from one pose to the next. |
+| `src/stage.js` | The engine's stage, lit as a house at night, with real lights at the lamps nearest the ball. |
 | `src/house.js`, `src/dig.js` | Tiles with four corner heights, as Dungeon Roller's dungeons have, turned into rooms: floors of wood, carpet, tile, boards and stone, papered walls, stairs, spills, and the furniture. The digger lays a level out a piece at a time. |
 | `src/furniture.js`, `src/scenery.js` | The furniture: solid boxes for the physics and the cats, and everything drawn over them, from cushions and turned legs to books, piano keys and a fire in the grate. Also the painted textures. |
 | `src/shapes.js` | The shapes the furniture and props are made of: rounded boxes, cushions, lathe turnings, swept baths and basins, tubes, leaves and rows of books. |
 | `src/levels.js` | The seven rooms. |
-| `src/models/` | The cats and the mouse, sculpted in code from signed distance fields, rigged and baked in workers. The cats are built bone by bone like a real cat, so they can sit on their haunches, curl up in a loaf, walk and gallop, and they blend from one pose to the next. See `models.html` for a turntable. |
+| `src/models/` | Who is in the house (`cast.js`), baked in workers by the engine's bake library. See `models.html` for a turntable, which shows anything in the engine's library by name. |
 | `src/nav.js` | How the cats find their way round the furniture. |
 | `src/cats.js` | What each cat sees and hears, and what it does about it. |
 | `src/critters.js` | Mice, flies and beetles: their rounds, and where they bolt to. |
 | `src/actors.js` | Mousetraps, nails, vacuums, buttons, tins, skeins, and the bits of strand left lying about. |
 | `src/sneak.js` | One level with nothing drawn: the rules for what catches the strand, what costs yarn, and what can be picked up. The game draws it; the tests drive it. |
-| `src/audio.js`, `src/score.js` | Every sound and the music, synthesised with Web Audio. The music tenses up when a cat is onto you. |
+| `src/audio.js`, `src/effects.js` | Every sound, synthesised on the engine's Web Audio, with the music (`madness-engine/music/score`), which tenses up when a cat is onto you; and the bits that fly, on the engine's. |
 
 | Script | |
 |---|---|
@@ -159,5 +167,5 @@ near you.
 `yarn.html` shows the ball on its own: on Carol's route, caught and rolled out
 (`?snag=1`), or rolling free (`?free=1`).
 
-The renderer is three.js-shaped but isn't three.js; see
-`src/vendor/gfx/LICENSE` for what it ports from it.
+The renderer is three.js-shaped but isn't three.js; see the engine's
+`src/gfx/LICENSE` for what it ports from it.

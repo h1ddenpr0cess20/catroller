@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { before, describe, it } from 'node:test';
 
-import * as GFX from '../src/vendor/gfx/index.js';
-import { createBall, MAX_LAID, TILE_METRES } from '../src/yarn/ball.js';
-import { R_TARGET, windBall } from '../src/yarn/winding.js';
+import * as GFX from 'madness-engine/gfx';
+import { createBall, MAX_LAID, TILE_METRES } from 'madness-engine/heroes/yarn/ball';
+import { R_TARGET, windBall } from 'madness-engine/heroes/yarn/winding';
 
 /** A ball on a flat floor at height 0, rolled along z from z0 a step at a time. */
 function rig() {

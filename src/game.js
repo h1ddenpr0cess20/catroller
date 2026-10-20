@@ -1,11 +1,12 @@
+import { BOARD_DETAIL } from 'madness-engine/characters/cat';
+import { createBall } from 'madness-engine/heroes/yarn/ball';
+import { toGround } from 'madness-engine/view';
 import { createEffects } from './effects.js';
 import { LEVELS } from './levels.js';
-import { CAST } from './models/cast/index.js';
-import { BOARD_DETAIL } from './models/cast/cat.js';
+import { CAST } from './models/cast.js';
 import { readyAll } from './models/library.js';
 import { createExit, createFurniture, createHouseMeshes, createLamps } from './scenery.js';
-import { COST, createSneak, LEFT, putBack, STEP, stepSneak, toGround } from './sneak.js';
-import { createBall } from './yarn/ball.js';
+import { COST, createSneak, LEFT, putBack, STEP, stepSneak } from './sneak.js';
 
 /**
  * The game: the rooms one after another, down through the house, with one
@@ -71,7 +72,7 @@ export function createGame({ stage, hud, input, audio, storage }) {
     if (exit) group.add(exit.group);
     decor = [house, exit].filter(Boolean);
     stage.setLamps(lamps.bulbs);
-    stage.setMood(sneak.level.palette.mood ?? {});
+    stage.setLight(sneak.level.palette.light);
     scene.add(group);
     effects.setHouse(sneak.level);
     accumulator = 0;

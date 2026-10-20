@@ -1,5 +1,5 @@
+import { CAT_KINDS } from 'madness-engine/characters/cat';
 import { LEVELS } from './levels.js';
-import { CAT_KINDS } from './models/cast/cat.js';
 
 /**
  * Everything on screen that isn't the 3D view: the room, the buttons and the

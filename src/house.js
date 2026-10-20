@@ -1,5 +1,5 @@
+import { World } from 'madness-engine/physics';
 import { CAT_HEIGHT, placed } from './furniture.js';
-import { World } from './physics.js';
 
 /**
  * A floor of the house is a grid of tiles, as a Dungeon Roller dungeon is:

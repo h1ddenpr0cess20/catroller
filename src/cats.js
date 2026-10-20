@@ -1,6 +1,6 @@
-import { BOARD_DETAIL, CAT_DEFS, CAT_KINDS } from './models/cast/cat.js';
+import { BOARD_DETAIL, CAT_DEFS, CAT_KINDS } from 'madness-engine/characters/cat';
+import { createModel } from 'madness-engine/models/model';
 import { isBaked, ready } from './models/library.js';
-import { createModel } from './models/model.js';
 
 /**
  * The cats, and what goes on in their heads.
@@ -19,7 +19,7 @@ import { createModel } from './models/model.js';
  * rolling fast over bare boards near it — or a bump.
  *
  * Catch the ball and it pins the loose end under its paw and bats at it:
- * the ball unwinds as it gets away (`yarn/ball.js`). The strand it is left
+ * the ball unwinds as it gets away (`madness-engine/heroes/yarn/ball`). The strand it is left
  * with, or any bit of strand lying about, is a toy, and a toy is as good as
  * a mouse to a cat.
  */

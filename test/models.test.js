@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import * as GFX from '../src/vendor/gfx/index.js';
-import { CAST } from '../src/models/cast/index.js';
-import { BOARD_DETAIL } from '../src/models/cast/cat.js';
-import { bake, createModel } from '../src/models/model.js';
+import * as GFX from 'madness-engine/gfx';
+import { CAST } from '../src/models/cast.js';
+import { BOARD_DETAIL } from 'madness-engine/characters/cat';
+import { bake, createModel } from 'madness-engine/models/model';
 
 const CLIPS = { cat: ['sit', 'sleep', 'walk', 'run', 'stalk', 'crouch', 'alert', 'swat', 'play', 'look'], mouse: ['idle', 'walk'] };
 

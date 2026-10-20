@@ -6,7 +6,7 @@ import { House } from '../src/house.js';
 import { LEVELS, loadLevel } from '../src/levels.js';
 import { createFurniture } from '../src/scenery.js';
 import { cushion } from '../src/shapes.js';
-import * as GFX from '../src/vendor/gfx/index.js';
+import * as GFX from 'madness-engine/gfx';
 
 /** A bathroom with only a toilet in it, at (4, 2) against the back wall, and its meshes. */
 function bathroom() {

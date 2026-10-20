@@ -1,8 +1,8 @@
-import { coil, geometry, joined, lathe, moved, ring, roundedBox, tube } from './shapes.js';
-import { buildTube } from './yarn/model.js';
-import { YR } from './yarn/winding.js';
-import { TILE_METRES } from './yarn/ball.js';
+import { TILE_METRES } from 'madness-engine/heroes/yarn/ball';
+import { buildTube } from 'madness-engine/heroes/yarn/model';
+import { YR } from 'madness-engine/heroes/yarn/winding';
 import { alongLoop } from './critters.js';
+import { coil, geometry, joined, lathe, moved, ring, roundedBox, tube } from './shapes.js';
 
 /**
  * Everything in the house that isn't a cat, a critter or the ball, and
@@ -230,7 +230,7 @@ export function createActors(GFX, house, world, { yarnMaterial } = {}) {
       }
     },
 
-    /** A length of strand left on the floor (from `yarn/ball.js`): drawn, and a toy for any cat that sees it. */
+    /** A length of strand left on the floor (from `madness-engine/heroes/yarn/ball`): drawn, and a toy for any cat that sees it. */
     drop(piece) {
       group.add(piece.group);
       const [x, , z] = piece.at;

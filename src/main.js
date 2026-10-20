@@ -1,7 +1,7 @@
+import { createInput } from 'madness-engine/input';
 import { createAudio } from './audio.js';
 import { createGame } from './game.js';
 import { createHud } from './hud.js';
-import { createInput } from './input.js';
 import { preload } from './models/library.js';
 import { createStage } from './stage.js';
 import { createStorage } from './storage.js';
@@ -36,14 +36,7 @@ try {
   game = createGame({ stage, hud, input, audio, storage: createStorage() });
   globalThis.catroller = game;
 
-  let last = performance.now();
-  stage.renderer.setAnimationLoop((now) => {
-    const dt = Math.min(0.1, Math.max(0, (now - last) / 1000));
-    last = now;
-    game.update(dt, input.take());
-    stage.look();
-    stage.render();
-  });
+  stage.run((dt) => game.update(dt, input.take()));
 } catch (err) {
   const box = document.getElementById('error');
   box.hidden = false;
