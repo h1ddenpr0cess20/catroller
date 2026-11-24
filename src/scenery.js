@@ -101,7 +101,7 @@ export function woodTexture(GFX, { boards = 5, rough = false, seed = 3 } = {}) {
   });
 }
 
-/** Carpet: a dense pile, every fibre a shade off, a tile square. */
+/** Carpet: a dense pile, every fiber a shade off, a tile square. */
 export function carpetTexture(GFX) {
   return cached('carpet', () => {
     const size = 256;
@@ -179,7 +179,7 @@ export function stoneTexture(GFX) {
 
 /**
  * Wallpaper, a tile across and four tall (taller than any wall): a pattern
- * of stripes and sprigs, near white (the colour is the room's), over a
+ * of stripes and sprigs, near white (the color is the room's), over a
  * white skirting board along the bottom with a groove in it.
  */
 export function paperTexture(GFX) {
@@ -357,7 +357,7 @@ function sisalTexture(GFX) {
       g.addColorStop(0, '#7a6440'); g.addColorStop(0.25, '#d8bc88'); g.addColorStop(0.6, '#c4a674'); g.addColorStop(1, '#6a5434');
       ctx.fillStyle = g;
       ctx.fillRect(0, y, size, step);
-      // The fibres, twisted along the rope.
+      // The fibers, twisted along the rope.
       for (let f = 0; f < 40; f++) {
         ctx.strokeStyle = `rgba(${rnd() < 0.5 ? '255,236,190' : '90,70,40'},${0.15 + rnd() * 0.2})`;
         ctx.lineWidth = 1;
@@ -436,7 +436,7 @@ function clockTexture(GFX) {
   });
 }
 
-/** The materials of the furniture, by name; a colour (`#rrggbb`) is upholstery in that colour. */
+/** The materials of the furniture, by name; a color (`#rrggbb`) is upholstery in that color. */
 function furnitureMaterials(GFX) {
   const grain = grainTexture(GFX).map, cloth = fabricTexture(GFX).map;
   const P = (name, o) => new GFX.MeshPhysicalMaterial({ name, roughness: 0.7, vertexColors: true, ...o });
@@ -509,16 +509,16 @@ function furnitureMaterials(GFX) {
   const fabrics = new Map();
   return (name) => {
     if (made[name]) return made[name];
-    const colour = name && name.startsWith('#') ? name : '#8a6a5a';
-    if (!fabrics.has(colour)) fabrics.set(colour, P(`fabric-${colour}`, { color: col(colour), map: cloth, roughness: 0.95, sheen: 1, sheenColor: col('#ffffff'), sheenRoughness: 0.6 }));
-    return fabrics.get(colour);
+    const color = name && name.startsWith('#') ? name : '#8a6a5a';
+    if (!fabrics.has(color)) fabrics.set(color, P(`fabric-${color}`, { color: col(color), map: cloth, roughness: 0.95, sheen: 1, sheenColor: col('#ffffff'), sheenRoughness: 0.6 }));
+    return fabrics.get(color);
   };
 }
 
 /** No shading baked into these: they give light, or are lit from inside. */
 const UNSHADED = new Set(['flame', 'flamecore', 'shade', 'screen']);
 
-/** A plant's leaves: `count` of them round a centre, up and out and drooping, on a few stems. */
+/** A plant's leaves: `count` of them round a center, up and out and drooping, on a few stems. */
 function plantLeaves({ count = 24, len = 1.2, wide = 0.4, seed = 1 }) {
   let s = seed * 9301 + 49297;
   const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
@@ -707,7 +707,7 @@ export function createHouseMeshes(GFX, built) {
 export function createLamps(GFX, house) {
   const group = new GFX.Group();
   group.name = 'lamps';
-  // Brass with some colour of its own: up on a wall all it would reflect is the dark, and all metal it looks black.
+  // Brass with some color of its own: up on a wall all it would reflect is the dark, and all metal it looks black.
   const brass = new GFX.MeshPhysicalMaterial({ name: 'sconce', color: new GFX.Color('#c8a050'), roughness: 0.35, metalness: 0.7 });
   const shade = new GFX.MeshPhysicalMaterial({ name: 'sconce-shade', color: new GFX.Color('#f6e6c0'), emissive: new GFX.Color('#ffc870'), emissiveIntensity: 1.8, roughness: 0.9, side: GFX.DoubleSide });
   const bulbs = [];

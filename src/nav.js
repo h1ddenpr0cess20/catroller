@@ -69,7 +69,7 @@ export function createNav(house) {
     return dist;
   }
 
-  /** Where to head next, from (x, z), down `dist` toward its target: a tile centre, or null if there's no way. */
+  /** Where to head next, from (x, z), down `dist` toward its target: a tile center, or null if there's no way. */
   function next(dist, x, z) {
     const cx = Math.floor(x), cz = Math.floor(z);
     const here = at(cx, cz);

@@ -117,7 +117,7 @@ export function createGame({ stage, hud, input, audio, storage }) {
   }
 
   function showYarn() {
-    hud.yarn(yarn.metres - yarn.paid, yarn.total, LEFT);
+    hud.yarn(yarn.meters - yarn.paid, yarn.total, LEFT);
   }
 
   function showTitle() {
@@ -155,10 +155,10 @@ export function createGame({ stage, hud, input, audio, storage }) {
   }
 
   /** Yarn gone outright (a fall, a soaking, the vacuum): whatever is paid out goes too. */
-  function spend(metres) {
+  function spend(meters) {
     const piece = yarn.snap();
     if (piece) sneak.actors.drop(piece);
-    yarn.set(yarn.metres - metres);
+    yarn.set(yarn.meters - meters);
     sneak.ball.r = yarn.radius;
     showYarn();
   }
@@ -192,7 +192,7 @@ export function createGame({ stage, hud, input, audio, storage }) {
     audio.stopMusic();
     audio.goal();
     if (last) {
-      hud.banner(`OUT THROUGH THE CAT FLAP!\n${buttons} BUTTONS`, 'big', `${yarn.metres.toFixed(1)} m of yarn left`);
+      hud.banner(`OUT THROUGH THE CAT FLAP!\n${buttons} BUTTONS`, 'big', `${yarn.meters.toFixed(1)} m of yarn left`);
       saved = storage.record(buttons);
     } else {
       hud.banner(`${sneak.level.name.toUpperCase()}\nDONE`, 'big', parts.join(' · '));
@@ -254,7 +254,7 @@ export function createGame({ stage, hud, input, audio, storage }) {
       }
     }
     showYarn();
-    if (yarn.metres - yarn.paid < LEFT && state === 'play') return gameOver();
+    if (yarn.meters - yarn.paid < LEFT && state === 'play') return gameOver();
     if (out.outcome === 'exit') finish();
     else if (out.outcome) lose(out.outcome);
   }
@@ -314,7 +314,7 @@ export function createGame({ stage, hud, input, audio, storage }) {
           putBack(sneak);
           yarn.root.visible = true;
           hud.banner(null);
-          if (yarn.metres < LEFT) gameOver(); else enter('play');
+          if (yarn.meters < LEFT) gameOver(); else enter('play');
         }
         break;
       case 'clear':
@@ -393,5 +393,5 @@ export function createGame({ stage, hud, input, audio, storage }) {
 
 /** The coat of a kind of cat, for which bake it needs. */
 function catCoat(kind) {
-  return { ginger: 'ginger', black: 'black', grey: 'grey', calico: 'calico', siamese: 'siamese', tom: 'tom' }[kind] ?? kind;
+  return { ginger: 'ginger', black: 'black', gray: 'gray', calico: 'calico', siamese: 'siamese', tom: 'tom' }[kind] ?? kind;
 }

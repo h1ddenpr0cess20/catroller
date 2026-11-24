@@ -102,8 +102,8 @@ html, body {
 }
 .yarn.low .meter i { animation: low 0.8s ease-in-out infinite alternate; }
 @keyframes low { from { filter: brightness(1); } to { filter: brightness(1.7); } }
-#metres { font-size: 13px; font-weight: 700; color: var(--yarn-light); font-variant-numeric: tabular-nums; }
-#metres.out { animation: out 1.2s ease-out; }
+#meters { font-size: 13px; font-weight: 700; color: var(--yarn-light); font-variant-numeric: tabular-nums; }
+#meters.out { animation: out 1.2s ease-out; }
 @keyframes out { 0% { color: #fff; transform: translateX(-4px); } 100% { transform: none; } }
 
 /* ———————————————— the map and the cats */

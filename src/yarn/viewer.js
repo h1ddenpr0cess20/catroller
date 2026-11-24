@@ -2,13 +2,13 @@
  * The yarn ball on its own (yarn.html), in the Yarn character's studio: to
  * look at while working on it. Not part of the game.
  *
- *   (default)     Carol's ball on Carol's route, `s` metres along (?s=0.3)
+ *   (default)     Carol's ball on Carol's route, `s` meters along (?s=0.3)
  *   ?snag=1       the game's ball, caught at the start and rolled out along an S
  *   ?free=1       the game's ball rolling free
  */
 
 import * as GFX from 'madness-engine/gfx';
-import { createBall, TILE_METRES } from 'madness-engine/heroes/yarn/ball';
+import { createBall, TILE_METERS } from 'madness-engine/heroes/yarn/ball';
 import { createYarn } from 'madness-engine/heroes/yarn/model';
 import { rollSpin, turn } from 'madness-engine/physics';
 import { createRenderer } from 'madness-engine/stage';
@@ -53,11 +53,11 @@ if (!game) {
   yarn.pose(Number(params.get('s') ?? 0));
   target.set(yarn.ball.position.x, 0.09, yarn.ball.position.z);
 } else {
-  // The game's ball, here in metres: the root back at metre scale, the ball's tiles turned to metres.
+  // The game's ball, here in meters: the root back at meter scale, the ball's tiles turned to meters.
   const yarn = createBall(GFX, () => 0);
   yarn.root.scale.setScalar(1);
   scene.add(yarn.root);
-  const T = TILE_METRES;
+  const T = TILE_METERS;
   const b = { x: 0, y: 0, z: 0, r: yarn.radius, vx: 0, vy: 0, vz: 0, nx: 0, ny: 1, nz: 0 };
   const q = [0, 0, 0, 1];
   const w = [0, 0, 0];

@@ -1,4 +1,4 @@
-import { TILE_METRES } from 'madness-engine/heroes/yarn/ball';
+import { TILE_METERS } from 'madness-engine/heroes/yarn/ball';
 import { buildTube } from 'madness-engine/heroes/yarn/model';
 import { YR } from 'madness-engine/heroes/yarn/winding';
 import { alongLoop } from './critters.js';
@@ -31,7 +31,7 @@ export function liftAt(time, period, phase = 0, pause = 0.18) {
   return 1 - smooth((u - 0.5 - pause) / run);
 }
 
-/** Button colours: an old tin's worth. */
+/** Button colors: an old tin's worth. */
 const BUTTONS = ['#e8d8b0', '#2a4a8a', '#b8322a', '#2e6a3a', '#f2f2ea', '#6a3a1e', '#d8a020', '#7a3a8a'];
 
 export function createActors(GFX, house, world, { yarnMaterial } = {}) {
@@ -276,7 +276,7 @@ export function createActors(GFX, house, world, { yarnMaterial } = {}) {
  */
 export function skeinMesh(GFX, material, seed = 0) {
   const turns = 54, per = 52, n = turns * per;
-  // Half its length and its thickness, in metres, as the ball is.
+  // Half its length and its thickness, in meters, as the ball is.
   const a = 0.068, b = 0.04;
   const C = new Float32Array(n * 3), T = new Float32Array(n * 3), NR = new Float32Array(n * 3), A = new Float32Array(n);
   const OUT = new Float32Array(n);
@@ -334,7 +334,7 @@ export function skeinMesh(GFX, material, seed = 0) {
   const g = new GFX.Group();
   g.add(mesh, band);
   g.rotation.set(0.25, seed * 0.7, 0.18);
-  g.scale.setScalar(1 / TILE_METRES * 1.35);
+  g.scale.setScalar(1 / TILE_METERS * 1.35);
   return g;
 }
 

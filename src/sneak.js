@@ -17,7 +17,7 @@ import { createNav } from './nav.js';
 /** The physics runs at a fixed rate, whatever the frame rate. */
 export const STEP = 1 / 120;
 
-/** What catches the strand, and how many metres it lets out before it snaps. */
+/** What catches the strand, and how many meters it lets out before it snaps. */
 export const SNAGS = Object.freeze({ paw: 2.6, trap: 1.4, nail: 1.6, stair: 0.6 });
 
 /** How hard a cat's swat knocks the ball away, tiles a second. */
@@ -26,7 +26,7 @@ const SWAT = 3.6;
 /** The yarn ball rolls a little slower than Dungeon Roller's die: it's soft, and the rooms are close. */
 const ROLL = { push: 15, topSpeed: 7.5 };
 
-/** What costs yarn outright, in metres. */
+/** What costs yarn outright, in meters. */
 export const COST = Object.freeze({ fell: 2, soaked: 2.5, hoovered: 5 });
 
 /** Less than this on the ball and it has come undone. */
@@ -97,7 +97,7 @@ function explore(sneak) {
  * 'hoovered'); `caught` — the cat that just caught it; `noticed` — cats that
  * have just seen it; `scared` — critters that just bolted; `snag` — what
  * just caught the strand ('paw', 'trap', 'nail', 'stair'); `snapped` — how
- * many metres just went when the strand broke; `rewound` — wound all the way
+ * many meters just went when the strand broke; `rewound` — wound all the way
  * back on; `picked` — whatever it picked up; `loud` — how much noise it is
  * making.
  */

@@ -5,7 +5,7 @@
  * pots, bowls), tubes swept along a path, leaves, and rows of books.
  *
  * A shape is plain arrays — { p: positions, n: normals, uv, i: indices,
- * c: colours (or none) } — in tiles, with texture coordinates in tiles too,
+ * c: colors (or none) } — in tiles, with texture coordinates in tiles too,
  * so cloth and grain come out the same size on everything. `moved` turns
  * and moves one; the furniture (scenery.js) puts them in place and merges
  * them, a mesh to a material.
@@ -48,13 +48,13 @@ export function moved(g, at = [0, 0, 0], rot = null) {
 /** Shapes as one. */
 export function joined(list) {
   const out = blank();
-  const coloured = list.some((g) => g.c);
-  if (coloured) out.c = [];
+  const colored = list.some((g) => g.c);
+  if (colored) out.c = [];
   for (const g of list) {
     const base = out.p.length / 3;
     out.p.push(...g.p); out.n.push(...g.n); out.uv.push(...g.uv);
     for (const k of g.i) out.i.push(k + base);
-    if (coloured) {
+    if (colored) {
       if (g.c) out.c.push(...g.c);
       else for (let v = 0; v < g.p.length / 3; v++) out.c.push(1, 1, 1);
     }
@@ -62,7 +62,7 @@ export function joined(list) {
   return out;
 }
 
-/** Every vertex of `g` coloured `rgb` (0–1 each). */
+/** Every vertex of `g` colored `rgb` (0–1 each). */
 export function tinted(g, rgb) {
   const c = [];
   for (let v = 0; v < g.p.length / 3; v++) c.push(rgb[0], rgb[1], rgb[2]);
@@ -70,7 +70,7 @@ export function tinted(g, rgb) {
 }
 
 /**
- * A box `w` × `h` × `d`, centred on the origin, its edges and corners
+ * A box `w` × `h` × `d`, centerd on the origin, its edges and corners
  * rounded over by `r`, `seg` steps to each round. Texture runs along x on
  * the top and the front, along z on the sides.
  */
@@ -129,7 +129,7 @@ const cosE = (t) => { const v = Math.cos(t); return Math.abs(v) < 1e-12 ? 0 : v;
 const sinE = (t) => { const v = Math.sin(t); return Math.abs(v) < 1e-12 ? 0 : v; };
 
 /**
- * A cushion: a superellipsoid `w` × `h` × `d` centred on the origin — `up`
+ * A cushion: a superellipsoid `w` × `h` × `d` centerd on the origin — `up`
  * how round it is top to bottom (1 a ball, small a slab with crisp edges),
  * `round` how round in plan.
  */
@@ -256,7 +256,7 @@ export function tube(points, r, { radial = 10, caps = true } = {}) {
   }
   if (caps) {
     for (const [k, sgn] of [[0, -1], [m - 1, 1]]) {
-      const centre = g.p.length / 3;
+      const center = g.p.length / 3;
       const t = T[k];
       g.p.push(...points[k]); g.n.push(t[0] * sgn, t[1] * sgn, t[2] * sgn); g.uv.push(0, 0);
       const ring = g.p.length / 3;
@@ -268,8 +268,8 @@ export function tube(points, r, { radial = 10, caps = true } = {}) {
         g.n.push(t[0] * sgn, t[1] * sgn, t[2] * sgn); g.uv.push(c * rk, s * rk);
       }
       for (let j = 0; j < radial; j++) {
-        if (sgn > 0) g.i.push(centre, ring + j, ring + j + 1);
-        else g.i.push(centre, ring + j + 1, ring + j);
+        if (sgn > 0) g.i.push(center, ring + j, ring + j + 1);
+        else g.i.push(center, ring + j + 1, ring + j);
       }
     }
   }
@@ -320,19 +320,19 @@ export function leaf(len, wide, { droop = 0.35, fold = 0.25, steps = 8 } = {}) {
 /**
  * A row of books standing on a shelf from x0 to x1, their spines facing +z
  * at z1, as tall as up to `h` and as deep as `d`; a few leaning, a gap now
- * and then. Coloured by vertex (the material should be white).
+ * and then. Colored by vertex (the material should be white).
  */
 export function books(x0, x1, y, z1, h, d, seed = 1) {
   let s = seed * 9301 + 49297;
   const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
-  const colours = [[0.42, 0.12, 0.1], [0.12, 0.22, 0.36], [0.18, 0.3, 0.18], [0.5, 0.36, 0.14], [0.3, 0.18, 0.3], [0.12, 0.1, 0.1], [0.62, 0.3, 0.16], [0.72, 0.66, 0.5], [0.2, 0.32, 0.34]];
+  const colors = [[0.42, 0.12, 0.1], [0.12, 0.22, 0.36], [0.18, 0.3, 0.18], [0.5, 0.36, 0.14], [0.3, 0.18, 0.3], [0.12, 0.1, 0.1], [0.62, 0.3, 0.16], [0.72, 0.66, 0.5], [0.2, 0.32, 0.34]];
   const list = [];
   let x = x0 + 0.03;
   while (x < x1 - 0.12) {
     const w = 0.07 + rnd() * 0.11, bh = h * (0.68 + rnd() * 0.3), bd = d * (0.75 + rnd() * 0.22);
     if (x + w > x1 - 0.03) break;
     if (rnd() < 0.06) { x += 0.15 + rnd() * 0.2; continue; }
-    const c = colours[Math.floor(rnd() * colours.length)].map((v) => v * (0.8 + rnd() * 0.4));
+    const c = colors[Math.floor(rnd() * colors.length)].map((v) => v * (0.8 + rnd() * 0.4));
     const lean = rnd() < 0.08 ? (rnd() - 0.5) * 0.5 : 0;
     const book = tinted(roundedBox(w, bh, bd, 0.015, 1), c);
     list.push(moved(book, [x + w / 2 + Math.sin(lean) * bh * 0.5, y + bh / 2 * Math.cos(lean), z1 - bd / 2], [0, 0, -lean]));

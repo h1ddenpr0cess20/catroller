@@ -11,13 +11,13 @@ import { House } from './house.js';
  * cats, the critters, the traps and the buttons are then put into the
  * pieces by where they are in them.
  *
- * A palette has the colours of each kind of floor, the wallpapers (`papers`,
+ * A palette has the colors of each kind of floor, the wallpapers (`papers`,
  * picked by index for each room), the cut tops of the walls (`cap`), the
  * steps (`riser`), the sides of floors over the dark (`side`), and how much
  * light the rooms have to begin with (`ambient`).
  */
 
-const COSY = {
+const COZY = {
   floors: {
     wood: ['#b48858', '#a77c4f', '#9b7048'], carpet: ['#8a5a6a', '#6a7a5a', '#5a6a8a'], tile: ['#e8e2d6', '#c8d4d8'],
     boards: ['#9a7a58', '#8a6a4a'], stone: ['#8a8580', '#7a7570'],
@@ -27,28 +27,28 @@ const COSY = {
 };
 
 const LANDING = {
-  ...COSY,
-  floors: { ...COSY.floors, carpet: ['#7a3a3a', '#6a3030'], tile: ['#f0ece4', '#2a3a5a'] },
+  ...COZY,
+  floors: { ...COZY.floors, carpet: ['#7a3a3a', '#6a3030'], tile: ['#f0ece4', '#2a3a5a'] },
   papers: ['#c8d8d0', '#e8e0c8', '#b8c8d8'],
 };
 
 const KITCHEN = {
-  ...COSY,
-  floors: { ...COSY.floors, tile: ['#e8e0d0', '#b84a3a', '#d8d0c0'] },
+  ...COZY,
+  floors: { ...COZY.floors, tile: ['#e8e0d0', '#b84a3a', '#d8d0c0'] },
   papers: ['#f0e6c8', '#d0dcc8', '#e8d0b0'],
   ambient: [0.64, 0.58, 0.52],
 };
 
-const PARLOUR = {
-  ...COSY,
-  floors: { ...COSY.floors, carpet: ['#4a5a7a', '#5a4a6a', '#7a5a3a'], wood: ['#8a5a38', '#7a4e30'] },
+const PARLOR = {
+  ...COZY,
+  floors: { ...COZY.floors, carpet: ['#4a5a7a', '#5a4a6a', '#7a5a3a'], wood: ['#8a5a38', '#7a4e30'] },
   papers: ['#7a8a6a', '#a87a6a', '#c8b890', '#6a7a8a'],
   ambient: [0.56, 0.5, 0.46],
 };
 
 const CELLAR = {
-  ...COSY,
-  floors: { ...COSY.floors, stone: ['#7a7672', '#6a6662', '#5e5a56'], boards: ['#7a5e44', '#6a523c'] },
+  ...COZY,
+  floors: { ...COZY.floors, stone: ['#7a7672', '#6a6662', '#5e5a56'], boards: ['#7a5e44', '#6a523c'] },
   papers: ['#8a8278', '#7a7268'],
   cap: '#2a2420', side: '#2e2620', ambient: [0.42, 0.4, 0.42],
 };
@@ -66,7 +66,7 @@ const loop = (p, inset = 1, from = 0, to = p.length) => {
  * and along the passage to the landing.
  */
 function sewingRoom() {
-  const c = new House({ name: 'The Sewing Room', depth: 1, cols: 80, rows: 76, palette: COSY, next: 'the Bedroom',
+  const c = new House({ name: 'The Sewing Room', depth: 1, cols: 80, rows: 76, palette: COZY, next: 'the Bedroom',
     intro: 'Out of the basket. Keep clear of the cats.' });
   const d = digger(c, { x: 3, z: 8, h: 30, heading: '+x', floor: 'wood', paper: 0 });
   // The sewing room: the basket by the window, a table, a chair, a dress form's worth of clutter.
@@ -79,8 +79,8 @@ function sewingRoom() {
   c.put('floorLamp', room.x + 12, room.z + 2, {});
   c.put('plant', room.x, room.z + 9);
   c.rug(room.x + 3, room.z + 6, 7, 4, { pattern: 'stripes', color: '#7a4a5a' });
-  // A grey cat, asleep on the rug: roll softly.
-  c.cat('grey', room.x + 6, room.z + 7, { does: 'sleep', facing: 1.2 });
+  // A gray cat, asleep on the rug: roll softly.
+  c.cat('gray', room.x + 6, room.z + 7, { does: 'sleep', facing: 1.2 });
   c.button(room.x + 2, room.z + 3, 2).button(room.x + 9, room.z + 4, 3).button(room.x + 12, room.z + 9, 2);
   d.hall(5, { width: 3 });
   d.turn('+z');
@@ -117,7 +117,7 @@ function sewingRoom() {
  * wardrobe.
  */
 function bedroom() {
-  const c = new House({ name: 'The Bedroom', depth: 2, cols: 84, rows: 84, palette: COSY, next: 'the Landing',
+  const c = new House({ name: 'The Bedroom', depth: 2, cols: 84, rows: 84, palette: COZY, next: 'the Landing',
     intro: 'Under the bed, no cat can see you.' });
   const d = digger(c, { x: 3, z: 8, h: 30, heading: '+x', floor: 'carpet', color: 1, paper: 3 });
   const hall = d.hall(6, { floor: 'wood' });
@@ -141,7 +141,7 @@ function bedroom() {
   c.tin(room.x + 9, room.z + 4, 25);
   d.hall(3, { floor: 'wood' });
   d.turn('+z', { width: 4, floor: 'wood' });
-  // The dressing room: a run of wardrobes, a mouse running its rounds, a grey cat watching for it.
+  // The dressing room: a run of wardrobes, a mouse running its rounds, a gray cat watching for it.
   const dress = d.hall(16, { width: 7, paper: 1, floor: 'wood' });
   // Along the wall, their backs to it.
   c.put('wardrobe', ...dress.tile(1, -2), { facing: '-x' });
@@ -150,7 +150,7 @@ function bedroom() {
   c.put('box', ...dress.tile(3, 2), { h: 1.6 });
   c.critter('mouse', ...dress.tile(9, 1), { path: [dress.tile(9, 1), dress.tile(14, 1), dress.tile(14, 2), dress.tile(9, 2)] });
   c.hole(...dress.tile(15, -3), '-x');
-  c.cat('grey', ...dress.tile(10, -1), { does: 'sit', facing: Math.PI });
+  c.cat('gray', ...dress.tile(10, -1), { does: 'sit', facing: Math.PI });
   c.trap(...dress.tile(7, 1));
   c.skein(...dress.tile(13, -2), 8);
   c.button(...dress.tile(5, 0), 2).button(...dress.tile(15, 3), 3);
@@ -235,7 +235,7 @@ function kitchen() {
   c.put('bowls', k.x + 1, k.z + 13);
   c.put('plant', k.x + 18, k.z + 8);
   c.water(k.x + 11, k.z + 2, 3, 2, 30);
-  c.cat('grey', k.x + 5, k.z + 3, { does: 'sleep', facing: 0.3 });
+  c.cat('gray', k.x + 5, k.z + 3, { does: 'sleep', facing: 0.3 });
   c.cat('ginger', k.x + 2, k.z + 12, { does: 'sit', facing: Math.PI * 0.5 });
   c.cat('black', k.x + 4, k.z + 5, { does: 'patrol', path: [[k.x + 4, k.z + 5], [k.x + 16, k.z + 5], [k.x + 16, k.z + 13], [k.x + 4, k.z + 13]], range: 12 });
   c.critter('mouse', k.x + 5, k.z + 13, { path: [[k.x + 4, k.z + 14], [k.x + 7, k.z + 14], [k.x + 7, k.z + 15], [k.x + 4, k.z + 15]] });
@@ -274,7 +274,7 @@ function kitchen() {
  * who misses nothing, and the robot vacuum doing its rounds.
  */
 function livingRoom() {
-  const c = new House({ name: 'The Living Room', depth: 5, cols: 96, rows: 96, palette: PARLOUR, next: 'the Cellar',
+  const c = new House({ name: 'The Living Room', depth: 5, cols: 96, rows: 96, palette: PARLOR, next: 'the Cellar',
     intro: 'The cats hate the vacuum. So should you.' });
   const d = digger(c, { x: 3, z: 10, h: 30, heading: '+x', floor: 'wood', paper: 0 });
   const door = d.hall(5, { width: 3 });
@@ -307,11 +307,11 @@ function livingRoom() {
   c.skein(r.x + 2, r.z + 8, 8);
   d.hall(3, { floor: 'wood' });
   d.turn('+z', { width: 4, floor: 'wood' });
-  // The conservatory: tiles and plants, flies everywhere, a grey cat on the prowl.
+  // The conservatory: tiles and plants, flies everywhere, a gray cat on the prowl.
   const con = d.hall(14, { width: 9, floor: 'tile', color: 1, paper: 2 });
   for (const [a, b] of [[2, -3], [6, 3], [10, -3], [12, 2]]) c.put('plant', ...con.tile(a, b));
   c.critter('fly', ...con.tile(3, 1)).critter('fly', ...con.tile(9, -1)).critter('beetle', ...con.tile(7, -3), { path: [con.tile(5, -3), con.tile(9, -3)] });
-  c.cat('grey', ...con.tile(4, 1), { does: 'patrol', path: [con.tile(1, 1), con.tile(11, 1), con.tile(11, -2), con.tile(1, -2)], range: 10 });
+  c.cat('gray', ...con.tile(4, 1), { does: 'patrol', path: [con.tile(1, 1), con.tile(11, 1), con.tile(11, -2), con.tile(1, -2)], range: 10 });
   c.water(...con.tile(8, 1), 2, 2, 30);
   c.button(...con.tile(5, -2), 3).button(...con.tile(11, 0), 3);
   const corner = d.turn('+x', { width: 9, floor: 'tile', color: 1 });
@@ -345,7 +345,7 @@ function cellar() {
   c.critter('mouse', ...at(1, 3));
   c.hole(...at(17, -3), '-x').hole(...at(0, 4), '+x').hole(...at(10, 7), '-z');
   c.cat('black', ...at(10, 0), { does: 'sit', facing: Math.PI });
-  c.cat('grey', ...at(14, 3), { does: 'sit', facing: 0.8 });
+  c.cat('gray', ...at(14, 3), { does: 'sit', facing: 0.8 });
   c.trap(...at(6, 1)).trap(...at(13, -1)).trap(...at(2, -4));
   c.button(...at(7, -3), 3).button(...at(16, 3), 4).button(...at(1, -1), 2);
   c.tin(...at(15, -3), 30);
