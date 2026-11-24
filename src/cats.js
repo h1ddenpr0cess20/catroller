@@ -404,7 +404,7 @@ export function createCats(GFX, house, nav) {
  * watches something.
  */
 function createMarks(GFX) {
-  const make = (text, colour, size = 64) => {
+  const make = (text, color, size = 64) => {
     if (typeof document === 'undefined') return null;
     const c = document.createElement('canvas');
     c.width = c.height = size;
@@ -415,7 +415,7 @@ function createMarks(GFX) {
     ctx.lineWidth = size * 0.1;
     ctx.strokeStyle = 'rgba(20, 12, 10, 0.9)';
     ctx.strokeText(text, size / 2, size * 0.54);
-    ctx.fillStyle = colour;
+    ctx.fillStyle = color;
     ctx.fillText(text, size / 2, size * 0.54);
     const t = new GFX.CanvasTexture(c);
     t.colorSpace = GFX.SRGBColorSpace;

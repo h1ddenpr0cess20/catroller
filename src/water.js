@@ -51,7 +51,7 @@ void main() {
     float ring = (1.0 - smoothstep(0.0, 0.04, abs(d - r))) * (1.0 - phase);
     col += vec3(0.8, 0.9, 1.0) * ring * 0.5;
   }
-  // Shallow at the edge: the floor's own colour showing through.
+  // Shallow at the edge: the floor's own color showing through.
   col = mix(col * 0.7 + vec3(0.12, 0.12, 0.14), col, smoothstep(0.0, 0.08, inside));
   gl_FragColor = vec4(col, 1.0);
 }`;

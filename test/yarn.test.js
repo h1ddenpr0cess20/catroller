@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { before, describe, it } from 'node:test';
 
 import * as GFX from 'madness-engine/gfx';
-import { createBall, MAX_LAID, TILE_METRES } from 'madness-engine/heroes/yarn/ball';
+import { createBall, MAX_LAID, TILE_METERS } from 'madness-engine/heroes/yarn/ball';
 import { R_TARGET, windBall } from 'madness-engine/heroes/yarn/winding';
 
 /** A ball on a flat floor at height 0, rolled along z from z0 a step at a time. */
@@ -38,7 +38,7 @@ describe('the ball', () => {
   it('is a little over a tile across in the house, a tile being 30 cm', () => {
     const { yarn } = rig();
     assert.ok(yarn.radius > 0.3 && yarn.radius < 0.42, `${yarn.radius} tiles`);
-    assert.equal(yarn.root.scale.x, 1 / TILE_METRES);
+    assert.equal(yarn.root.scale.x, 1 / TILE_METERS);
   });
 });
 
@@ -49,9 +49,9 @@ describe('the loose end caught', () => {
     yarn.snag(b, q, { snap: 4 });
     roll(0.02, 60);
     // 60 steps of 2 cm of tile is 1.2 tiles: 36 cm of strand.
-    assert.ok(Math.abs(yarn.paid - 1.2 * TILE_METRES) < 0.01, `${yarn.paid} m paid out`);
+    assert.ok(Math.abs(yarn.paid - 1.2 * TILE_METERS) < 0.01, `${yarn.paid} m paid out`);
     assert.ok(yarn.laid.visible);
-    // A few metres off and it rolls on a smaller ball.
+    // A few meters off and it rolls on a smaller ball.
     roll(0.04, 250);
     assert.ok(yarn.paid > 2.5 && yarn.radius < r0 - 0.005, `${yarn.radius} after ${yarn.paid} m`);
   });
@@ -66,7 +66,7 @@ describe('the loose end caught', () => {
     let x = 0, z = 0;
     for (let j = 0; j < 8; j++) { x += pos[(first * 9 + j) * 3]; z += pos[(first * 9 + j) * 3 + 2]; }
     x /= 8; z /= 8;
-    assert.ok(Math.hypot(x - b.x * TILE_METRES, z - b.z * TILE_METRES) < 0.01, `the strand ends ${Math.hypot(x - b.x * TILE_METRES, z - b.z * TILE_METRES)} m from the ball`);
+    assert.ok(Math.hypot(x - b.x * TILE_METERS, z - b.z * TILE_METERS) < 0.01, `the strand ends ${Math.hypot(x - b.x * TILE_METERS, z - b.z * TILE_METERS)} m from the ball`);
   });
 
   it('winds back on, exactly, rolling back along it', () => {
@@ -76,7 +76,7 @@ describe('the loose end caught', () => {
     const out = roll(-0.02, 60);
     assert.ok(out?.rewound, 'it was wound all the way back on');
     assert.equal(yarn.holder, null);
-    assert.ok(Math.abs(yarn.metres - yarn.total) < 1e-9, 'none of it lost');
+    assert.ok(Math.abs(yarn.meters - yarn.total) < 1e-9, 'none of it lost');
   });
 
   it('snaps at the holder\'s limit, and that much is gone', () => {
@@ -85,7 +85,7 @@ describe('the loose end caught', () => {
     const out = roll(0.03, 400);
     assert.ok(out?.snapped, 'it snapped');
     assert.ok(Math.abs(out.snapped - 1.5) < 0.01);
-    assert.ok(Math.abs(yarn.metres - (yarn.total - out.snapped)) < 1e-6);
+    assert.ok(Math.abs(yarn.meters - (yarn.total - out.snapped)) < 1e-6);
     assert.ok(out.piece.group.isObject3D, 'and left a piece on the floor');
     assert.ok(MAX_LAID >= 1.5);
   });
@@ -101,7 +101,7 @@ describe('the loose end caught', () => {
       assert.ok(out?.snapped, 'it snapped');
       const p = out.piece.group.children[0].geometry.attributes.position.array;
       for (let v = 0; v < p.length; v += 3) {
-        assert.ok(Math.abs(p[v] - x * TILE_METRES) < 0.01, `a bit of it ${(Math.abs(p[v] - x * TILE_METRES) * 100).toFixed(1)} cm off the way the ball went`);
+        assert.ok(Math.abs(p[v] - x * TILE_METERS) < 0.01, `a bit of it ${(Math.abs(p[v] - x * TILE_METERS) * 100).toFixed(1)} cm off the way the ball went`);
       }
       b.x += 3;
     }
@@ -126,7 +126,7 @@ describe('the loose end caught', () => {
       const p = out.piece.group.children[0].geometry.attributes.position.array;
       for (let v = 0; v < p.length; v += 3) {
         assert.ok(p[v + 1] > -0.01 && p[v + 1] < 0.02, `${how}: a bit of it at height ${p[v + 1]} m`);
-        assert.ok(Math.abs(p[v] - 2 * TILE_METRES) < 0.05 && p[v + 2] < 4.1 * TILE_METRES, `${how}: a bit of it at ${p[v]}, ${p[v + 2]} m`);
+        assert.ok(Math.abs(p[v] - 2 * TILE_METERS) < 0.05 && p[v + 2] < 4.1 * TILE_METERS, `${how}: a bit of it at ${p[v]}, ${p[v + 2]} m`);
       }
     }
   });

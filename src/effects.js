@@ -12,18 +12,18 @@ export function createEffects(GFX, scene) {
 
   const mote = new GFX.SphereGeometry(0.035, 6, 4);
   const glows = new Map();
-  const glow = (colour) => {
-    if (!glows.has(colour)) glows.set(colour, new GFX.MeshBasicMaterial({ name: 'glow', color: new GFX.Color(colour), toneMapped: false }));
-    return glows.get(colour);
+  const glow = (color) => {
+    if (!glows.has(color)) glows.set(color, new GFX.MeshBasicMaterial({ name: 'glow', color: new GFX.Color(color), toneMapped: false }));
+    return glows.get(color);
   };
   const coin = new GFX.CylinderGeometry(0.06, 0.06, 0.02, 12);
   const buttonCache = new Map();
-  const buttonMats = (colour) => {
-    if (!buttonCache.has(colour)) buttonCache.set(colour, new GFX.MeshPhysicalMaterial({ name: 'button', color: new GFX.Color(colour), roughness: 0.3, clearcoat: 0.8 }));
-    return buttonCache.get(colour);
+  const buttonMats = (color) => {
+    if (!buttonCache.has(color)) buttonCache.set(color, new GFX.MeshPhysicalMaterial({ name: 'button', color: new GFX.Color(color), roughness: 0.3, clearcoat: 0.8 }));
+    return buttonCache.get(color);
   };
   // Wisps of wool, and drops of water: lit like everything else, not glowing.
-  const fibre = new GFX.CylinderGeometry(0.008, 0.006, 0.12, 4);
+  const fiber = new GFX.CylinderGeometry(0.008, 0.006, 0.12, 4);
   const wool = new GFX.MeshStandardMaterial({ name: 'fluff', color: new GFX.Color('#c8281a'), roughness: 1 });
   const drop = new GFX.SphereGeometry(0.03, 8, 6);
   const water = new GFX.MeshPhysicalMaterial({ name: 'drop', color: new GFX.Color('#8ab8d0'), roughness: 0.05, clearcoat: 1, transparent: true, opacity: 0.7 });
@@ -38,8 +38,8 @@ export function createEffects(GFX, scene) {
       bits.clear();
     },
 
-    sparkle(x, y, z, colour = '#ff5a7a') {
-      bits.burst({ at: [x, y + 0.3, z], count: 18, mesh: () => new GFX.Mesh(mote, glow(colour)), speed: 1.2, up: 3, life: 0.7, lifeSpread: 0.5, floaty: -0.1, drag: 1.5, bounce: 0 });
+    sparkle(x, y, z, color = '#ff5a7a') {
+      bits.burst({ at: [x, y + 0.3, z], count: 18, mesh: () => new GFX.Mesh(mote, glow(color)), speed: 1.2, up: 3, life: 0.7, lifeSpread: 0.5, floaty: -0.1, drag: 1.5, bounce: 0 });
     },
 
     dust(x, y, z) {
@@ -48,7 +48,7 @@ export function createEffects(GFX, scene) {
 
     /** Fluff off the ball: a cat's swat. */
     tuft(x, y, z) {
-      bits.burst({ at: [x, y, z], count: 8, mesh: () => new GFX.Mesh(fibre, wool), scale: [0.7, 1.3], speed: 1.2, up: 1.6, life: 0.6, lifeSpread: 0.5, floaty: 0.25, drag: 2.5, spin: 6, bounce: 0 });
+      bits.burst({ at: [x, y, z], count: 8, mesh: () => new GFX.Mesh(fiber, wool), scale: [0.7, 1.3], speed: 1.2, up: 1.6, life: 0.6, lifeSpread: 0.5, floaty: 0.25, drag: 2.5, spin: 6, bounce: 0 });
     },
 
     /** A splash of water. */

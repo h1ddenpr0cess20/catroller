@@ -53,7 +53,7 @@ describe('the cats', () => {
   });
 
   it('a cat with nothing to watch sees the ball in front of it, given a moment, but not behind it', () => {
-    const s = scene((h) => h.cat('grey', 12, 8, { facing: Math.PI / 2 }));
+    const s = scene((h) => h.cat('gray', 12, 8, { facing: Math.PI / 2 }));
     const cat = s.cats[0];
     Object.assign(s.ball, { x: 8.5, z: 8.5 });
     s.run(3);
@@ -90,7 +90,7 @@ describe('the cats', () => {
   });
 
   it('lose a cat for long enough and it goes back to where it was', () => {
-    const s = scene((h) => h.cat('grey', 6, 8, { facing: Math.PI / 2, range: 6 }));
+    const s = scene((h) => h.cat('gray', 6, 8, { facing: Math.PI / 2, range: 6 }));
     const cat = s.cats[0];
     Object.assign(s.ball, { x: 11.5, z: 8.5 });
     s.run(1.5);

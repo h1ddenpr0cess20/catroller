@@ -35,7 +35,7 @@ const turned = (x, y, z, profile, mat, o = {}) => ({ turned: [x, y, z], profile,
 const pipe = (points, r, mat, o = {}) => ({ tube: points, r, mat, solid: false, ...o });
 /** A knob, a ball, a fruit. */
 const knob = (x, y, z, r, mat = 'brass', o = {}) => ({ ball: [x, y, z, r], mat, solid: false, ...o });
-/** Hollow, rounded-rectangle things (`swept` in shapes.js), centred at (x, y, z). */
+/** Hollow, rounded-rectangle things (`swept` in shapes.js), centerd at (x, y, z). */
 const bowl = (x, y, z, a, b, n, profile, mat, o = {}) => ({ swept: [x, y, z], a, b, n, profile, mat, solid: false, ...o });
 /** A flat rounded rectangle at (x, y, z): water in a bath, food in a bowl. */
 const sheet = (x, y, z, a, b, n, mat, o = {}) => ({ slab: [x, y, z], a, b, n, mat, solid: false, ...o });
@@ -65,7 +65,7 @@ const POT = [[0, 0], [0.46, 0], [0.48, 0.04], [0.6, 1.22], [0.6, 1.22], [0.7, 1.
 /**
  * Every kind of furniture: `size` [w, d] in tiles, `parts`, and `lamp` if it
  * gives light ([x, y, z] in its own frame). A part's `mat` is one of the
- * materials in `scenery.js` (the colour of fabric and paint comes from the
+ * materials in `scenery.js` (the color of fabric and paint comes from the
  * piece, as `colors`). Only the solid parts matter to the game; the rest
  * are for looking at, and stay inside the solid ones' bounds or above
  * where the ball can reach.

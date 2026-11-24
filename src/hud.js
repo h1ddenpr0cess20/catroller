@@ -10,8 +10,8 @@ import { LEVELS } from './levels.js';
 
 const NAMES = LEVELS.map((level) => level().name);
 
-/** The colour each coat shows as, in the list of cats. */
-const COATS = { ginger: '#e2903e', black: '#262028', grey: '#8a8e96', calico: 'conic-gradient(#f2ece2 0 40%, #d8822e 0 70%, #2a2220 0)', siamese: 'radial-gradient(#e8d8bc 45%, #4a3426 50%)', tom: '#7a6a56' };
+/** The color each coat shows as, in the list of cats. */
+const COATS = { ginger: '#e2903e', black: '#262028', gray: '#8a8e96', calico: 'conic-gradient(#f2ece2 0 40%, #d8822e 0 70%, #2a2220 0)', siamese: 'radial-gradient(#e8d8bc 45%, #4a3426 50%)', tom: '#7a6a56' };
 
 /** What a cat's mood looks like. */
 const MOODS = { sure: '!', unsure: '?', asleep: 'z', busy: '♥', calm: '·' };
@@ -21,7 +21,7 @@ export function createHud(root, { onStart }) {
   const top = $('top');
   const levelEl = $('level');
   const scoreEl = $('score');
-  const metresEl = $('metres');
+  const metersEl = $('meters');
   const meterEl = top.querySelector('.meter i');
   const yarnEl = top.querySelector('.yarn');
   const bannerEl = $('banner');
@@ -39,7 +39,7 @@ export function createHud(root, { onStart }) {
   /** The corner of the room's bounds, so the map shows the room and not the grid round it. */
   let mapAt = [0, 0];
   let catRows = [];
-  let lastMetres = null;
+  let lastMeters = null;
 
   muteEl.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -137,16 +137,16 @@ export function createHud(root, { onStart }) {
     },
 
     /** The yarn on the ball, out of a whole ball's worth. */
-    yarn(metres, total, low) {
-      meterEl.style.width = `${Math.max(0, Math.min(100, (100 * metres) / total))}%`;
-      metresEl.textContent = `${metres.toFixed(1)} m`;
-      yarnEl.classList.toggle('low', metres < low * 2.2);
-      if (lastMetres !== null && metres < lastMetres - 0.05) {
-        metresEl.classList.remove('out');
-        void metresEl.offsetWidth;
-        metresEl.classList.add('out');
+    yarn(meters, total, low) {
+      meterEl.style.width = `${Math.max(0, Math.min(100, (100 * meters) / total))}%`;
+      metersEl.textContent = `${meters.toFixed(1)} m`;
+      yarnEl.classList.toggle('low', meters < low * 2.2);
+      if (lastMeters !== null && meters < lastMeters - 0.05) {
+        metersEl.classList.remove('out');
+        void metersEl.offsetWidth;
+        metersEl.classList.add('out');
       }
-      lastMetres = metres;
+      lastMeters = meters;
     },
 
     /** The cats of the room, for the list down the side. */

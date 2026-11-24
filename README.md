@@ -64,7 +64,7 @@ There's no server and no keys: it's a static page. `npm run build` puts it in
 |---|---|---|
 | **Blaze** | Ginger | The everyday cat: quick enough, and sharp-eyed enough. |
 | **Nyx** | Black | The fastest. She sees a long way and hears well. |
-| **Ghost** | Grey | Slow and a little dozy. He would rather watch a mouse than you. |
+| **Ghost** | Gray | Slow and a little dozy. He would rather watch a mouse than you. |
 | **Jinx** | Calico | Small. She plays the longest with anything she catches. |
 | **Vex** | Siamese | She misses nothing: she has the widest eyes, sees the furthest and hears the best. |
 | **Brutus** | Tom | Big and slow, with a long reach. He keeps the front door. |

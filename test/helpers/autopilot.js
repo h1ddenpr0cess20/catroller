@@ -16,7 +16,7 @@ import { createSneak, putBack, STEP, stepSneak } from '../../src/sneak.js';
 /** The furthest it will drop: well short of a drop that hurts. */
 export const DROP = FALL_LIMIT * 0.6;
 
-const NEIGHBOURS = [
+const NEIGHBORS = [
   [0, -1, (c) => [c.h[0], c.h[1]], (n) => [n.h[2], n.h[3]]],
   [0, 1, (c) => [c.h[2], c.h[3]], (n) => [n.h[0], n.h[1]]],
   [-1, 0, (c) => [c.h[0], c.h[2]], (n) => [n.h[1], n.h[3]]],
@@ -37,7 +37,7 @@ function hazards(sneak) {
   return bad;
 }
 
-/** The ways from tile to tile: a step to a neighbour that isn't higher at the shared edge and isn't too far down. */
+/** The ways from tile to tile: a step to a neighbor that isn't higher at the shared edge and isn't too far down. */
 export function graph(sneak) {
   const { level } = sneak;
   const bad = hazards(sneak);
@@ -49,7 +49,7 @@ export function graph(sneak) {
       const c = level.cell(x, z);
       if (!ok(c, x, z)) continue;
       const out = [];
-      for (const [dx, dz, mine, theirs] of NEIGHBOURS) {
+      for (const [dx, dz, mine, theirs] of NEIGHBORS) {
         const n = level.cell(x + dx, z + dz);
         if (!ok(n, x + dx, z + dz)) continue;
         const [a0, a1] = mine(c), [b0, b1] = theirs(n);
@@ -157,7 +157,7 @@ export function drive(index, { limit = 600, sample = null, quiet = true } = {}) 
     if (Math.hypot(b.vx, b.vz) < 0.05) still += STEP; else still = 0;
     if (still > 15) return { finished: false, time: t, losses, snags, stuck: { at: here(), wp, of: route.length } };
     if (out.snag) snags.push(out.snag);
-    if (out.outcome === 'exit') return { finished: true, time: t, losses, snags, yarn: yarn.metres, sneak };
+    if (out.outcome === 'exit') return { finished: true, time: t, losses, snags, yarn: yarn.meters, sneak };
     if (out.outcome) {
       losses.push({ how: out.outcome, at: [b.x.toFixed(1), b.y.toFixed(1), b.z.toFixed(1)], wp, time: t.toFixed(1) });
       down = 1.5;

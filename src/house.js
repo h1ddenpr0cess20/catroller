@@ -214,7 +214,7 @@ export class House {
   /**
    * A cat (cats.js): `kind` its coat and nature. It stays within `range` of
    * where it starts; `does` is what it does with itself when nothing is
-   * going on — 'sit', 'sleep', or 'patrol' round `path` (tile centres).
+   * going on — 'sit', 'sleep', or 'patrol' round `path` (tile centers).
    */
   cat(kind, x, z, { does = 'sit', path = null, range = 9, facing = 0 } = {}) {
     this.cats.push({ kind, x: x + 0.5, z: z + 0.5, does, range, facing, path: path && path.map(([px, pz]) => [px + 0.5, pz + 0.5]) });
@@ -250,7 +250,7 @@ export class House {
     return this;
   }
 
-  /** The robot vacuum, going round `path` (tile centres) at `speed` tiles a second. */
+  /** The robot vacuum, going round `path` (tile centers) at `speed` tiles a second. */
   vacuum(path, { speed = 1.6 } = {}) {
     this.vacuums.push({ path: path.map(([px, pz]) => [px + 0.5, pz + 0.5]), speed });
     return this;
@@ -281,7 +281,7 @@ export class House {
     return this;
   }
 
-  /** A skein of red wool: wound onto the ball, `amount` metres. */
+  /** A skein of red wool: wound onto the ball, `amount` meters. */
   skein(x, z, amount = 8) {
     this.pickups.push({ kind: 'skein', x: x + 0.5, z: z + 0.5, amount });
     return this;
@@ -373,7 +373,7 @@ function banked(u, bank) {
   return bank * Math.min(k * k, 1.8);
 }
 
-/** sRGB hex to linear RGB — vertex colours are linear. */
+/** sRGB hex to linear RGB — vertex colors are linear. */
 export function linearRGB(hex) {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
@@ -404,14 +404,14 @@ export function bakeLight(house) {
       if (c?.kind === 'exit') exits.push([x + 0.5, c.h[0] + 0.8, z + 0.5]);
     }
   }
-  const glow = (sources, x, y, z, reach, colour, out) => {
+  const glow = (sources, x, y, z, reach, color, out) => {
     for (const [sx, sy, sz] of sources) {
       const dx = x - sx, dz = z - sz;
       if (Math.abs(dx) > reach || Math.abs(dz) > reach) continue;
       const d = Math.hypot(dx, (y - sy) * 0.6, dz);
       if (d >= reach) continue;
       const k = (1 - d / reach) ** 2;
-      out[0] += colour[0] * k; out[1] += colour[1] * k; out[2] += colour[2] * k;
+      out[0] += color[0] * k; out[1] += color[1] * k; out[2] += color[2] * k;
     }
   };
   return (x, y, z) => {
@@ -453,9 +453,9 @@ export function buildHouse(house) {
     return linearRGB(list[((i % list.length) + list.length) % list.length]);
   };
   const papers = (palette.papers ?? ['#d8c8a8']).map(linearRGB);
-  const capColour = linearRGB(palette.cap ?? '#3a302a');
-  const riserColour = linearRGB(palette.riser ?? '#e8e0d0');
-  const sideColour = linearRGB(palette.side ?? '#5a4636');
+  const capColor = linearRGB(palette.cap ?? '#3a302a');
+  const riserColor = linearRGB(palette.riser ?? '#e8e0d0');
+  const sideColor = linearRGB(palette.side ?? '#5a4636');
   const light = bakeLight(house);
 
   const normalOf = (a, b, c) => {
@@ -469,19 +469,19 @@ export function buildHouse(house) {
     const l = light(p[0], p[1], p[2]);
     return [base[0] * l[0], base[1] * l[1], base[2] * l[2]];
   };
-  const face = (out, a, b, c, normal, colours, uvs) => {
+  const face = (out, a, b, c, normal, colors, uvs) => {
     out.position.push(...a, ...b, ...c);
     for (let k = 0; k < 3; k++) out.normal.push(...normal);
-    out.color.push(...colours[0], ...colours[1], ...colours[2]);
+    out.color.push(...colors[0], ...colors[1], ...colors[2]);
     out.uv.push(...uvs[0], ...uvs[1], ...uvs[2]);
   };
 
   /**
    * One upright face: the polygon between the bottom line and the top along
    * the edge p0 → p1, facing `out`. `base` is the height its texture starts
-   * from (the floor it stands on), `colour(y)` its colour by height.
+   * from (the floor it stands on), `color(y)` its color by height.
    */
-  const upright = (into, p0, p1, poly, out, colour, base, solid = true) => {
+  const upright = (into, p0, p1, poly, out, color, base, solid = true) => {
     const at = (t, y) => [p0[0] + (p1[0] - p0[0]) * t, y, p0[1] + (p1[1] - p0[1]) * t];
     const pts = poly.map(([t, y]) => at(t, y));
     const along = (p) => (Math.abs(p1[0] - p0[0]) > 0 ? p[0] : p[2]);
@@ -490,7 +490,7 @@ export function buildHouse(house) {
       let n = normalOf(a, b, c);
       if (n[0] * out[0] + n[2] * out[2] < 0) { [b, c] = [c, b]; n = normalOf(a, b, c); }
       if (solid) world.addTriangle(...a, ...b, ...c);
-      if (into) face(into, a, b, c, n, [a, b, c].map((p) => lit(colour(p[1]), p)), [a, b, c].map((p) => [along(p), p[1] - base]));
+      if (into) face(into, a, b, c, n, [a, b, c].map((p) => lit(color(p[1]), p)), [a, b, c].map((p) => [along(p), p[1] - base]));
     }
   };
 
@@ -526,7 +526,7 @@ export function buildHouse(house) {
       const A = [x, h00, z], B = [x + 1, h10, z], C = [x, h01, z + 1], D = [x + 1, h11, z + 1];
       let out, base;
       if (c.kind === 'water') { out = water; base = [1, 1, 1]; }
-      else if (c.kind === 'wall') { out = caps; base = capColour; }
+      else if (c.kind === 'wall') { out = caps; base = capColor; }
       else { out = floors[c.floor] ?? floors.wood; base = tint(c.floor, c.color); }
       const vary = c.kind === 'wall' || c.kind === 'water' ? 1 : 0.9 + 0.16 * grain(x, z);
       const col = base.map((v) => v * vary);
@@ -574,24 +574,24 @@ export function buildHouse(house) {
         const d0 = a0 - b0, d1 = a1 - b1;
         if (d0 <= 1e-6 && d1 <= 1e-6) continue;
         // Papered where a wall faces a room; a riser where a floor steps down to another; the dark's edge otherwise.
-        let into, colour, from = Math.min(b0, b1);
+        let into, color, from = Math.min(b0, b1);
         if (!n) {
           into = sides;
           const top = Math.max(a0, a1);
-          colour = (y) => {
+          color = (y) => {
             const k = Math.max(0, Math.min(1, 1 - (top - y) / DEPTH));
-            return sideColour.map((v) => v * (0.05 + 0.5 * k * k * k));
+            return sideColor.map((v) => v * (0.05 + 0.5 * k * k * k));
           };
         } else if (c.kind === 'wall' && n.kind !== 'wall') {
           into = walls;
           const paper = papers[((n.paper ?? 0) % papers.length + papers.length) % papers.length];
-          colour = () => paper;
+          color = () => paper;
         } else if (c.kind === 'wall') {
           into = caps;
-          colour = () => capColour;
+          color = () => capColor;
         } else {
           into = risers;
-          colour = () => riserColour;
+          color = () => riserColor;
           from = Math.min(b0, b1);
         }
         const poly = d0 >= -1e-6 && d1 >= -1e-6
@@ -602,7 +602,7 @@ export function buildHouse(house) {
             const ym = a0 + (a1 - a0) * t;
             return d0 > 0 ? [[0, b0], [t, ym], [0, a0]] : [[1, b1], [1, a1], [t, ym]];
           })();
-        upright(show ? into : null, p0, p1, poly, outward, colour, from, solid);
+        upright(show ? into : null, p0, p1, poly, outward, color, from, solid);
       }
       }
     }
